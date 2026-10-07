@@ -78,10 +78,10 @@ function toggleQuick(k) {
     <button class="stat soon" :class="{ on: quick === 'soon' }" @click="toggleQuick('soon')">
       <span class="num">{{ stats.soon }}</span><span class="lbl">3 日內到貨</span>
     </button>
-    <button class="stat" @click="quick = ''; status = 'active'">
+    <button class="stat" :class="{ on: !quick && status === 'active' }" @click="quick = ''; status = 'active'">
       <span class="num">{{ stats.active }}</span><span class="lbl">進行中</span>
     </button>
-    <button class="stat" @click="quick = ''; status = 'received'">
+    <button class="stat" :class="{ on: !quick && status === 'received' }" @click="quick = ''; status = 'received'">
       <span class="num">{{ stats.receivedMonth }}</span><span class="lbl">本月已收貨</span>
     </button>
   </section>

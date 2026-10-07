@@ -123,7 +123,9 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .stat .lbl { font-size: 0.8rem; color: var(--muted); }
 .stat.overdue .num { color: var(--overdue); }
 .stat.soon .num { color: var(--soon); }
-.stat.on { outline: 2px solid var(--accent); }
+/* 目前篩選中的卡片：外框＋底色＋標籤加粗，手機上也一眼看得出來 */
+.stat.on { outline: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.stat.on .lbl { color: var(--accent); font-weight: 700; }
 
 /* ── Toolbar ── */
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
