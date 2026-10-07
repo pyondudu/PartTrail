@@ -4,5 +4,6 @@ dist
 widget/config.json
 # 根目錄的截圖（螢幕擷取畫面、貼上的影像等）
 /*.png
-# 廠商名單（已匯入 Supabase，不公開）
+# 廠商、需求人名單（已匯入 Supabase，不公開）
 supabase/vendors_seed.sql
+supabase/requesters_seed.sql

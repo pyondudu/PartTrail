@@ -102,6 +102,13 @@ create table if not exists public.vendors (
   created_at  timestamptz not null default now()
 );
 
+-- 需求人清單（新增料件時的下拉選單；items.requester 存名稱）
+create table if not exists public.requesters (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null unique,
+  created_at  timestamptz not null default now()
+);
+
 -- ─────────────────────────────────────────────
 -- Triggers：交期歷史、狀態紀錄、updated_at
 -- ─────────────────────────────────────────────
@@ -156,6 +163,7 @@ alter table public.due_date_history enable row level security;
 alter table public.status_log       enable row level security;
 alter table public.attachments      enable row level security;
 alter table public.vendors          enable row level security;
+alter table public.requesters       enable row level security;
 
 drop policy if exists "profiles self read" on public.profiles;
 create policy "profiles self read" on public.profiles
@@ -164,7 +172,7 @@ create policy "profiles self read" on public.profiles
 do $$
 declare t text;
 begin
-  foreach t in array array['items', 'due_date_history', 'status_log', 'attachments', 'vendors'] loop
+  foreach t in array array['items', 'due_date_history', 'status_log', 'attachments', 'vendors', 'requesters'] loop
     execute format('drop policy if exists "read for members" on public.%I', t);
     execute format('create policy "read for members" on public.%I for select using (public.my_role() in (''editor'', ''viewer''))', t);
     execute format('drop policy if exists "write for editors" on public.%I', t);

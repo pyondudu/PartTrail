@@ -34,27 +34,30 @@ watchEffect(() => {
 
 const dueChanged = computed(() => original.value?.due_date && form.due_date !== original.value.due_date)
 
-// 廠商下拉選單：來自 vendors 表；編輯舊資料時，不在清單上的廠商也保留顯示
-const ADD_VENDOR = '__add__'
-const vendorList = ref([])
-const vendors = computed(() => [...new Set([...vendorList.value, form.vendor].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
-
-onMounted(async () => {
-  const { data, error } = await supabase.from('vendors').select('name')
-  if (error) err.value = '讀取廠商清單失敗：' + error.message
-  vendorList.value = (data ?? []).map((v) => v.name)
-})
-
-watch(() => form.vendor, async (v, prev) => {
-  if (v !== ADD_VENDOR) return
-  form.vendor = prev
-  const name = window.prompt('新增廠商名稱：')?.trim()
-  if (!name) return
-  const { error } = await supabase.from('vendors').insert({ name })
-  if (error && error.code !== '23505') return alert('新增廠商失敗：' + error.message)
-  if (!vendorList.value.includes(name)) vendorList.value.push(name)
-  form.vendor = name
-})
+// 下拉選單：名單來自 Supabase 表（不寫進公開程式碼）；選「＋ 新增…」可當場加入。
+// 編輯舊資料時，不在名單上的值也保留顯示
+const ADD_NEW = '__add__'
+function nameList(table, field, label) {
+  const list = ref([])
+  onMounted(async () => {
+    const { data, error } = await supabase.from(table).select('name')
+    if (error) err.value = `讀取${label}清單失敗：` + error.message
+    list.value = (data ?? []).map((r) => r.name)
+  })
+  watch(() => form[field], async (v, prev) => {
+    if (v !== ADD_NEW) return
+    form[field] = prev
+    const name = window.prompt(`新增${label}名稱：`)?.trim()
+    if (!name) return
+    const { error } = await supabase.from(table).insert({ name })
+    if (error && error.code !== '23505') return alert(`新增${label}失敗：` + error.message)
+    if (!list.value.includes(name)) list.value.push(name)
+    form[field] = name
+  })
+  return computed(() => [...new Set([...list.value, form[field]].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
+}
+const vendors = nameList('vendors', 'vendor', '廠商')
+const requesters = nameList('requesters', 'requester', '需求人')
 
 // 儲存時一併上傳的附檔
 const pending = ref([])
@@ -62,7 +65,6 @@ function addFiles(e) {
   pending.value.push(...e.target.files)
   e.target.value = ''
 }
-const requesters = computed(() => [...new Set(store.items.map((i) => i.requester).filter(Boolean))].sort())
 
 function setStatus(k) {
   form.status = k
@@ -153,7 +155,13 @@ async function save() {
       <div class="grid">
         <label class="span2" :class="{ invalid: bad('project') }">專案 *<input v-model="form.project" /></label>
         <label class="span2" :class="{ invalid: bad('part_name') }">品名 *<input v-model="form.part_name" /></label>
-        <label class="span2" :class="{ invalid: bad('requester') }">需求人（主管/同事） *<input v-model="form.requester" list="requesters" /></label>
+        <label class="span2" :class="{ invalid: bad('requester') }">需求人 *
+          <select v-model="form.requester">
+            <option value="" disabled>請選擇需求人</option>
+            <option v-for="r in requesters" :key="r" :value="r">{{ r }}</option>
+            <option :value="ADD_NEW">＋ 新增需求人…</option>
+          </select>
+        </label>
         <label class="span2">規格 / 說明<textarea v-model="form.spec" rows="2" placeholder="細節可直接看報價單附檔" /></label>
         <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
         <label>單位<input v-model="form.unit" /></label>
@@ -167,7 +175,7 @@ async function save() {
           <select v-model="form.vendor">
             <option value="" disabled>請選擇廠商</option>
             <option v-for="v in vendors" :key="v" :value="v">{{ v }}</option>
-            <option :value="ADD_VENDOR">＋ 新增廠商…</option>
+            <option :value="ADD_NEW">＋ 新增廠商…</option>
           </select>
         </label>
         <label>報價單號<input v-model="form.quote_no" placeholder="LINE 報價可留空" /></label>
@@ -218,7 +226,6 @@ async function save() {
       <textarea v-model="form.note" rows="3" placeholder="追問紀錄、催貨情況…" />
     </fieldset>
 
-    <datalist id="requesters"><option v-for="r in requesters" :key="r" :value="r" /></datalist>
 
     <p v-if="err" class="msg error">{{ err }}</p>
     <div class="form-actions">
