@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+<title>PartTrail 精靈 — 設定與登入</title>
+<link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <main>
+    <h1>PartTrail 精靈</h1>
+    <p class="muted">設定一次後會自動登入，並每天提醒三日內要到貨的料件。</p>
+    <form id="form">
+      <details id="server" open>
+        <summary>連線設定</summary>
+        <label>Supabase Project URL<input name="supabaseUrl" placeholder="https://xxxx.supabase.co" required /></label>
+        <label>Supabase anon key<input name="supabaseAnonKey" required /></label>
+        <label>追蹤總表網址<input name="webUrl" placeholder="https://你的帳號.github.io/parttrail/" /></label>
+        <div class="row">
+          <label>提前幾天提醒<input name="soonDays" type="number" min="1" max="14" value="3" /></label>
+          <label>每日提醒時間（時）<input name="notifyHour" type="number" min="0" max="23" value="9" /></label>
+        </div>
+      </details>
+      <fieldset>
+        <legend>帳號</legend>
+        <p id="logged" class="muted" hidden></p>
+        <label>Email<input name="email" type="email" autocomplete="email" /></label>
+        <label>密碼<input name="password" type="password" autocomplete="current-password" placeholder="已登入可留空" /></label>
+      </fieldset>
+      <p id="msg"></p>
+      <div class="actions">
+        <button type="button" id="logout" class="ghost" hidden>登出</button>
+        <button type="submit">儲存並登入</button>
+      </div>
+    </form>
+  </main>
+<script src="setup.js"></script>
+</body>
+</html>

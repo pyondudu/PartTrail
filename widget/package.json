@@ -1,0 +1,30 @@
+{
+  "name": "parttrail-widget",
+  "productName": "PartTrail 精靈",
+  "version": "1.0.0",
+  "description": "PartTrail 桌面交期提醒精靈",
+  "main": "main.js",
+  "author": "PartTrail",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "icons": "electron scripts/make-icons.js",
+    "dist": "electron-builder --win portable nsis"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^25.1.0"
+  },
+  "build": {
+    "appId": "com.parttrail.widget",
+    "productName": "PartTrail 精靈",
+    "files": ["main.js", "preload.js", "lib/**", "renderer/**", "config.json", "build/icon.png"],
+    "win": { "icon": "build/icon.png", "target": ["portable", "nsis"] },
+    "portable": { "artifactName": "PartTrail-Widget-${version}-portable.exe" },
+    "nsis": { "oneClick": true, "perMachine": false, "artifactName": "PartTrail-Widget-${version}-setup.exe" }
+  }
+}

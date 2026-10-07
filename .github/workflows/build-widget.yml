@@ -1,0 +1,27 @@
+# 在 GitHub 的 Windows 機器上打包桌面精靈 .exe
+# 使用前：Repo → Settings → Secrets and variables → Actions 新增
+#   SUPABASE_URL、SUPABASE_ANON_KEY、WEB_URL（會寫進 config.json 預先填好設定）
+name: Build widget (Windows)
+on:
+  workflow_dispatch:
+  push:
+    paths: ['widget/**']
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults: { run: { working-directory: widget } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Write config.json
+        shell: bash
+        run: |
+          printf '{"supabaseUrl":"%s","supabaseAnonKey":"%s","webUrl":"%s"}' \
+            "${{ secrets.SUPABASE_URL }}" "${{ secrets.SUPABASE_ANON_KEY }}" "${{ secrets.WEB_URL }}" > config.json
+      - run: npx electron-builder --win portable nsis --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PartTrail-Widget
+          path: widget/dist/*.exe

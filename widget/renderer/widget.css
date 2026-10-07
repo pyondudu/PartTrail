@@ -1,0 +1,137 @@
+:root {
+  --surface: #ffffff;
+  --text: #2b2a27;
+  --muted: #77756e;
+  --border: #e5e2d8;
+  --accent: #d97757;
+  --overdue: #c2412d;
+  --overdue-bg: #fdecea;
+  --soon: #b8730a;
+  --soon-bg: #fff4e0;
+  --ok: #3d7a4f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #262522;
+    --text: #ecebe6;
+    --muted: #a3a097;
+    --border: #3b3a35;
+    --overdue: #f08070;
+    --overdue-bg: #3d2420;
+    --soon: #f0b44d;
+    --soon-bg: #3a2f1a;
+    --ok: #7cc596;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; height: 100%; overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+  font-size: 13px; color: var(--text);
+  user-select: none;
+}
+#stage {
+  height: 100%; padding: 8px;
+  display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: 6px;
+}
+[hidden] { display: none !important; }
+
+/* ── 精靈 ── */
+#sprite { width: 112px; height: 116px; cursor: grab; flex-shrink: 0; margin-right: 4px; }
+#sprite.dragging { cursor: grabbing; }
+#sprite svg { overflow: visible; display: block; }
+.shadow { fill: rgb(0 0 0 / 0.18); transform-origin: 60px 112px; animation: shadow 3.2s ease-in-out infinite; }
+.bob { transform-origin: 60px 106px; animation: breathe 3.2s ease-in-out infinite; }
+.spark { animation: twinkle 2.4s ease-in-out infinite; }
+.eyes-open { transform-origin: 60px 68px; animation: blink 5s infinite; }
+.eyes-happy, .mouth.oh, .sweat, .box { display: none; }
+.badge { display: none; }
+.badge circle { fill: var(--soon); stroke: #fff; stroke-width: 2.5; }
+.badge text { fill: #fff; font-weight: 700; font-size: 14px; font-family: inherit; }
+
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97); } }
+@keyframes shadow { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.06); } }
+@keyframes twinkle { 0%, 100% { transform: translate(60px, 22px) rotate(0) scale(1); } 50% { transform: translate(60px, 22px) rotate(20deg) scale(1.15); } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 20% { transform: translateY(-10px); } 40% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-35deg); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+/* 沒有待到貨：開心 */
+.mood-happy .eyes-open { display: none; }
+.mood-happy .eyes-happy { display: block; }
+
+/* 有 3 日內到貨：跳一跳、抱包裹、揮手 */
+.mood-soon .bob { animation: hop 2.6s ease-in-out infinite; }
+.mood-soon .box, .mood-overdue .box { display: block; }
+.mood-soon .arm.right { transform-origin: 92px 72px; animation: wave 1.3s ease-in-out infinite; }
+.mood-soon .badge, .mood-overdue .badge { display: block; }
+
+/* 有逾期：緊張、流汗、紅色徽章 */
+.mood-overdue .bob { animation: shake 0.5s ease-in-out infinite; animation-delay: 0s; }
+.mood-overdue .sweat { display: block; }
+.mood-overdue .mouth.smile { display: none; }
+.mood-overdue .mouth.oh { display: block; }
+.mood-overdue .badge circle { fill: var(--overdue); }
+
+/* 未登入 / 錯誤：灰階 */
+.mood-setup #sprite, .mood-error #sprite { filter: grayscale(0.85); opacity: 0.85; }
+
+/* ── 對話泡泡 ── */
+#bubble {
+  position: relative; max-width: 240px; margin-right: 18px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 8px 12px; font-size: 13px; line-height: 1.4;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+  cursor: pointer;
+  animation: pop 0.25s ease-out;
+}
+#bubble::after {
+  content: ""; position: absolute; right: 36px; bottom: -7px;
+  width: 12px; height: 12px; background: var(--surface);
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+#bubble b.overdue { color: var(--overdue); }
+#bubble b.soon { color: var(--soon); }
+@keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── 清單面板 ── */
+#panel {
+  width: 100%; max-height: 300px;
+  display: flex; flex-direction: column;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.22);
+  overflow: hidden;
+  animation: pop 0.2s ease-out; transform-origin: bottom right;
+}
+#panel header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px 8px 12px; border-bottom: 1px solid var(--border);
+}
+.panel-actions { display: flex; gap: 2px; }
+.panel-actions button {
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  width: 26px; height: 26px; border-radius: 6px; font-size: 14px;
+}
+.panel-actions button:hover { background: rgb(128 128 128 / 0.15); color: var(--text); }
+#list { list-style: none; margin: 0; padding: 4px; overflow-y: auto; flex: 1; }
+#list li {
+  display: grid; grid-template-columns: 1fr auto; gap: 0 8px;
+  padding: 7px 8px; border-radius: 8px; cursor: pointer;
+  border-left: 3px solid var(--soon);
+  margin-bottom: 2px;
+}
+#list li:hover { background: rgb(128 128 128 / 0.1); }
+#list li.overdue { border-left-color: var(--overdue); }
+#list .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#list .sub { grid-column: 1; font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#list .days { grid-row: 1 / span 2; grid-column: 2; align-self: center; text-align: right; font-weight: 700; font-size: 12px; color: var(--soon); }
+#list li.overdue .days { color: var(--overdue); }
+#list .days small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+#list .empty { border: 0; cursor: default; color: var(--muted); text-align: center; display: block; padding: 16px; }
+#updated { font-size: 11px; color: var(--muted); padding: 5px 12px; border-top: 1px solid var(--border); }

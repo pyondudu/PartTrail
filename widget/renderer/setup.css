@@ -1,0 +1,23 @@
+:root { --bg: #faf9f5; --surface: #fff; --text: #2b2a27; --muted: #77756e; --border: #e5e2d8; --accent: #d97757; --err: #c2412d; --ok: #3d7a4f; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1c1b19; --surface: #262522; --text: #ecebe6; --muted: #a3a097; --border: #3b3a35; --accent: #e08a6c; --err: #f08070; --ok: #7cc596; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; }
+main { padding: 20px 24px; }
+h1 { font-size: 20px; margin: 0 0 4px; color: var(--accent); }
+.muted { color: var(--muted); margin: 0 0 12px; }
+form { display: flex; flex-direction: column; gap: 12px; }
+details, fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 14px; background: var(--surface); margin: 0; }
+summary, legend { font-weight: 600; cursor: pointer; padding: 0 4px; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+input { font: inherit; font-size: 14px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; }
+input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+button { font: inherit; font-weight: 600; border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 8px 18px; border-radius: 8px; cursor: pointer; }
+button.ghost { background: none; color: var(--accent); }
+button:disabled { opacity: .6; }
+#msg { margin: 0; min-height: 1.5em; }
+#msg.err { color: var(--err); }
+#msg.ok { color: var(--ok); }
