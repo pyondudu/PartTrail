@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "icons": "electron scripts/make-icons.js",
-    "dist": "electron-builder --win portable nsis"
+    "dist": "electron-builder --win portable"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -23,8 +23,7 @@
     "appId": "com.parttrail.widget",
     "productName": "PartTrail 精靈",
     "files": ["main.js", "preload.js", "lib/**", "renderer/**", "config.json", "build/icon.png"],
-    "win": { "icon": "build/icon.png", "target": ["portable", "nsis"] },
-    "portable": { "artifactName": "PartTrail-Widget-${version}-portable.exe" },
-    "nsis": { "oneClick": true, "perMachine": false, "artifactName": "PartTrail-Widget-${version}-setup.exe" }
+    "win": { "icon": "build/icon.png", "target": ["portable"] },
+    "portable": { "artifactName": "PartTrail-Widget-${version}-portable.exe" }
   }
 }

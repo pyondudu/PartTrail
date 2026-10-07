@@ -88,8 +88,8 @@ npm run dev              # 同一個 Wi-Fi 下手機也可用顯示的 Network �
 1. 在 repo Secrets 再加一個 `WEB_URL`（網頁網址）。
 2. Actions → **Build widget (Windows)** → Run workflow。
 3. 完成後在該次執行頁面下載 `PartTrail-Widget`，內含：
-   - `PartTrail-Widget-1.0.0-setup.exe`：安裝版（建議）
-   - `PartTrail-Widget-1.0.0-portable.exe`：免安裝單一檔
+   - `PartTrail-Widget-1.0.0-portable.exe`：免安裝單一檔。先放到固定的資料夾（例如 `C:\Users\<你>\PartTrail\`）再執行；之後移動位置，執行一次就會更新開機自動啟動的路徑
+   - 只打包免安裝版：程式沒有數位簽章，安裝版會被 Windows「智慧型應用程式控制」擋下
 
 **方法 B：在 Windows 電腦上自行打包**
 ```powershell

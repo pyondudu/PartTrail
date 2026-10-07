@@ -199,7 +199,11 @@ function updateTray() {
     { label: '立即更新', click: refresh },
     { label: '開啟追蹤總表', enabled: Boolean(webBase()), click: () => shell.openExternal(webBase()) },
     { type: 'separator' },
-    { label: '開機自動啟動', type: 'checkbox', checked: openAtLogin, click: (mi) => { app.setLoginItemSettings({ openAtLogin: mi.checked, ...autoLaunchOpts() }) } },
+    { label: '開機自動啟動', type: 'checkbox', checked: openAtLogin, click: (mi) => {
+      app.setLoginItemSettings({ openAtLogin: mi.checked, ...autoLaunchOpts() })
+      settings.autoLaunch = mi.checked
+      saveSettings(settings)
+    } },
     { label: '回到預設位置', click: () => { widget.setPosition(...Object.values(defaultPosition())); savePosition() } },
     { label: '設定 / 登入…', click: openSetup },
     { type: 'separator' },
@@ -277,11 +281,15 @@ app.whenReady().then(async () => {
   settings = loadSettings()
   initClient()
 
-  // 安裝後第一次執行預設開機自動啟動
-  if (app.isPackaged && !settings.autoLaunchInit) {
-    app.setLoginItemSettings({ openAtLogin: true, ...autoLaunchOpts() })
-    settings.autoLaunchInit = true
-    saveSettings(settings)
+  // 第一次執行預設開機自動啟動；之後每次啟動都重新登記目前的 exe 位置，
+  // 免安裝版被移到別的資料夾後，執行一次就會更新開機啟動的路徑
+  if (app.isPackaged) {
+    if (!settings.autoLaunchInit) {
+      settings.autoLaunch = true
+      settings.autoLaunchInit = true
+      saveSettings(settings)
+    }
+    if (settings.autoLaunch !== false) app.setLoginItemSettings({ openAtLogin: true, ...autoLaunchOpts() })
   }
 
   tray = new Tray(nativeImage.createFromPath(ICON).resize({ width: 16, height: 16 }))

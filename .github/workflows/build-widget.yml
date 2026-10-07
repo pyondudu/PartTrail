@@ -20,7 +20,7 @@ jobs:
         run: |
           printf '{"supabaseUrl":"%s","supabaseAnonKey":"%s","webUrl":"%s"}' \
             "${{ secrets.SUPABASE_URL }}" "${{ secrets.SUPABASE_ANON_KEY }}" "${{ secrets.WEB_URL }}" > config.json
-      - run: npx electron-builder --win portable nsis --publish never
+      - run: npx electron-builder --win portable --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: PartTrail-Widget
