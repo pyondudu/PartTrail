@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
@@ -15,6 +15,19 @@ const statusLog = ref([])
 const files = ref([])
 const toast = ref('')
 const uploading = ref(false)
+
+// 點照片在原頁面放大預覽；點背景、✕ 或按 Esc 關閉
+const preview = ref(null)
+function openPreview(f, ev) {
+  if (!f.mime?.startsWith('image/')) return // 其他檔案照舊開新分頁
+  ev.preventDefault()
+  preview.value = f
+}
+function onKey(ev) {
+  if (ev.key === 'Escape') preview.value = null
+}
+window.addEventListener('keydown', onKey)
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 async function loadRelated() {
   const [h, s, a] = await Promise.all([
@@ -144,7 +157,7 @@ async function removeItem() {
       <p v-if="!files.length" class="muted">尚無附檔</p>
       <ul class="files">
         <li v-for="f in files" :key="f.id">
-          <a :href="f.url" target="_blank" rel="noopener" class="file">
+          <a :href="f.url" target="_blank" rel="noopener" class="file" @click="openPreview(f, $event)">
             <img v-if="f.mime?.startsWith('image/')" :src="f.url" alt="" />
             <span v-else class="file-icon">PDF</span>
             <span class="file-name">{{ f.file_name }}</span>
@@ -183,5 +196,11 @@ async function removeItem() {
     </div>
 
     <div v-if="toast" class="toast">{{ toast }}</div>
+
+    <div v-if="preview" class="lightbox" @click.self="preview = null">
+      <button class="lightbox-close" aria-label="關閉" @click="preview = null">✕</button>
+      <img :src="preview.url" :alt="preview.file_name" />
+      <p class="lightbox-name">{{ preview.file_name }}</p>
+    </div>
   </div>
 </template>
