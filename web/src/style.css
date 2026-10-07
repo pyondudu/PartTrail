@@ -216,7 +216,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
   .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .items-table { display: none; }
   .items-cards { display: flex; }
-  .toolbar select { flex: 1 1 30%; }
+  .toolbar select { flex: 1 1 40%; }
   .toolbar .btn.primary { flex: 1 1 100%; }
   .grid { grid-template-columns: 1fr; }
   .grid .span2 { grid-column: auto; }

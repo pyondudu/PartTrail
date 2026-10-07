@@ -11,7 +11,7 @@ const router = useRouter()
 const isNew = computed(() => !props.id)
 
 const EMPTY = {
-  part_name: '', spec: '', qty: null, unit: 'pcs',
+  project: '', part_name: '', spec: '', qty: null, unit: 'pcs',
   vendor: '', requester: '',
   quote_no: '', quote_amount: null, quote_date: todayStr(),
   status: 'quoted', order_date: null, due_date: null,
@@ -72,7 +72,7 @@ function setStatus(k) {
 
 // 必填欄位：追交期必要的資訊；依狀態只檢查目前顯示的區塊
 const LABELS = {
-  part_name: '品名', requester: '需求人', qty: '數量', vendor: '廠商',
+  project: '專案', part_name: '品名', requester: '需求人', qty: '數量', vendor: '廠商',
   due_date: '交期', reason: '交期變更原因', received_date: '到貨日',
 }
 const showErrors = ref(false)
@@ -82,7 +82,7 @@ function isEmpty(v) {
 }
 
 const missing = computed(() => {
-  const keys = ['part_name', 'requester', 'qty', 'vendor']
+  const keys = ['project', 'part_name', 'requester', 'qty', 'vendor']
   if (form.status !== 'quoted') keys.push('due_date')
   if (form.status === 'received') keys.push('received_date')
   const list = keys.filter((k) => isEmpty(form[k]))
@@ -151,6 +151,7 @@ async function save() {
     <fieldset class="card">
       <legend>料件資訊</legend>
       <div class="grid">
+        <label class="span2" :class="{ invalid: bad('project') }">專案 *<input v-model="form.project" /></label>
         <label class="span2" :class="{ invalid: bad('part_name') }">品名 *<input v-model="form.part_name" /></label>
         <label class="span2" :class="{ invalid: bad('requester') }">需求人（主管/同事） *<input v-model="form.requester" list="requesters" /></label>
         <label class="span2">規格 / 說明<textarea v-model="form.spec" rows="2" placeholder="細節可直接看報價單附檔" /></label>

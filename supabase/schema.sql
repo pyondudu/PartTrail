@@ -39,6 +39,7 @@ $$;
 -- ─────────────────────────────────────────────
 create table if not exists public.items (
   id                 uuid primary key default gen_random_uuid(),
+  project            text,
   part_name          text not null,
   spec               text,
   qty                numeric,
@@ -60,6 +61,9 @@ create table if not exists public.items (
 );
 
 create index if not exists items_status_due_idx on public.items (status, due_date);
+
+-- 後加欄位（舊資料庫重跑本檔時補上）；專案必填由前端檢查
+alter table public.items add column if not exists project text;
 
 create table if not exists public.due_date_history (
   id          bigint generated always as identity primary key,

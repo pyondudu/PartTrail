@@ -10,16 +10,18 @@ function loadFilters() {
 const saved = loadFilters()
 const q = ref('')
 const status = ref(saved.status ?? 'active') // active | all | quoted | ordered | received
+const project = ref(saved.project ?? '')
 const vendor = ref(saved.vendor ?? '')
 const requester = ref(saved.requester ?? '')
 const quick = ref('') // overdue | soon | ''
 
-watch([status, vendor, requester], () => {
+watch([status, project, vendor, requester], () => {
   try {
-    localStorage.setItem(FILTER_KEY, JSON.stringify({ status: status.value, vendor: vendor.value, requester: requester.value }))
+    localStorage.setItem(FILTER_KEY, JSON.stringify({ status: status.value, project: project.value, vendor: vendor.value, requester: requester.value }))
   } catch {}
 })
 
+const projects = computed(() => [...new Set(store.items.map((i) => i.project).filter(Boolean))].sort())
 const vendors = computed(() => [...new Set(store.items.map((i) => i.vendor).filter(Boolean))].sort())
 const requesters = computed(() => [...new Set(store.items.map((i) => i.requester).filter(Boolean))].sort())
 
@@ -44,6 +46,7 @@ const list = computed(() => {
     .filter((i) => {
       if (status.value === 'active' && i.status === 'received') return false
       if (STATUS_KEYS.includes(status.value) && i.status !== status.value) return false
+      if (project.value && i.project !== project.value) return false
       if (vendor.value && i.vendor !== vendor.value) return false
       if (requester.value && i.requester !== requester.value) return false
       if (quick.value && urgency(i) !== quick.value) return false
@@ -90,6 +93,10 @@ function toggleQuick(k) {
       <option value="all">全部</option>
       <option v-for="k in STATUS_KEYS" :key="k" :value="k">{{ STATUS[k].label }}</option>
     </select>
+    <select v-model="project">
+      <option value="">所有專案</option>
+      <option v-for="p in projects" :key="p">{{ p }}</option>
+    </select>
     <select v-model="vendor">
       <option value="">所有廠商</option>
       <option v-for="v in vendors" :key="v">{{ v }}</option>
@@ -112,7 +119,7 @@ function toggleQuick(k) {
   <table v-if="list.length" class="items-table">
     <thead>
       <tr>
-        <th>交期</th><th>狀態</th><th>品名</th><th>廠商</th><th>需求人</th><th class="num">數量</th>
+        <th>交期</th><th>狀態</th><th>專案</th><th>品名</th><th>廠商</th><th>需求人</th><th class="num">數量</th>
       </tr>
     </thead>
     <tbody>
@@ -122,6 +129,7 @@ function toggleQuick(k) {
           <div class="days">{{ daysText(i) }}</div>
         </td>
         <td><span class="pill" :class="i.status">{{ STATUS[i.status].label }}</span></td>
+        <td>{{ i.project || '—' }}</td>
         <td>
           <div class="name">{{ i.part_name }}</div>
           <div v-if="i.spec" class="sub">{{ i.spec }}</div>
@@ -141,6 +149,7 @@ function toggleQuick(k) {
         <span class="pill" :class="i.status">{{ STATUS[i.status].label }}</span>
       </div>
       <div class="row2">
+        <span v-if="i.project">{{ i.project }} · </span>
         <span>{{ i.vendor }}</span>
         <span v-if="i.requester"> · {{ i.requester }}</span>
         <span v-if="i.qty"> · {{ i.qty }} {{ i.unit }}</span>

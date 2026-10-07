@@ -115,6 +115,7 @@ async function removeItem() {
 
     <section class="card">
       <dl class="kv">
+        <dt>專案</dt><dd>{{ item.project || '—' }}</dd>
         <dt>廠商</dt><dd>{{ item.vendor }}</dd>
         <dt>需求人</dt><dd>{{ item.requester || '—' }}</dd>
         <dt>規格</dt><dd class="pre">{{ item.spec || '—' }}</dd>
