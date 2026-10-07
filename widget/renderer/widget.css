@@ -38,50 +38,218 @@ html, body {
 }
 [hidden] { display: none !important; }
 
-/* ── 精靈 ── */
+/* ── 精靈（16×16 像素畫）── */
+#buddy {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  animation: wander 18s ease-in-out infinite;
+}
 #sprite { width: 112px; height: 116px; cursor: grab; flex-shrink: 0; margin-right: 4px; }
 #sprite.dragging { cursor: grabbing; }
 #sprite svg { overflow: visible; display: block; }
-.shadow { fill: rgb(0 0 0 / 0.18); transform-origin: 60px 112px; animation: shadow 3.2s ease-in-out infinite; }
-.bob { transform-origin: 60px 106px; animation: breathe 3.2s ease-in-out infinite; }
-.spark { animation: twinkle 2.4s ease-in-out infinite; }
-.eyes-open { transform-origin: 60px 68px; animation: blink 5s infinite; }
-.eyes-happy, .mouth.oh, .sweat, .box { display: none; }
+/* 拖曳、展開清單時停下來，不要邊走邊被拖 */
+body:has(#sprite.dragging) :is(#buddy, .look, .legs),
+body:has(#panel:not([hidden])) :is(#buddy, .look, .legs) { animation-play-state: paused; }
+
+.shadow { fill: rgb(0 0 0 / 0.18); transform-origin: 8px 15.3px; animation: shadow 2.4s ease-in-out infinite; }
+.bob { animation: float 2.4s ease-in-out infinite; }
+.spark { transform-origin: 8px 1.5px; animation: twinkle 2.4s ease-in-out infinite; }
+.look { animation: look 18s ease-in-out infinite; }
+.eyes-open { transform-origin: 8px 7px; animation: blink 5s infinite; }
+.legs-a, .legs-b { opacity: 0; }
+.legs-stand { animation: legs-stand 18s step-end infinite; }
+.legs-a { animation: legs-a 18s step-end infinite; }
+.legs-b { animation: legs-b 18s step-end infinite; }
+.cheeks, .mouth.oh, .sweat, .box { display: none; }
 .badge { display: none; }
-.badge circle { fill: var(--soon); stroke: #fff; stroke-width: 2.5; }
-.badge text { fill: #fff; font-weight: 700; font-size: 14px; font-family: inherit; }
+.badge circle { fill: var(--soon); stroke: #fff; stroke-width: 0.4; }
+.badge text { fill: #fff; font-weight: 700; font-size: 2.6px; font-family: inherit; }
 
-@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97); } }
-@keyframes shadow { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.06); } }
-@keyframes twinkle { 0%, 100% { transform: translate(60px, 22px) rotate(0) scale(1); } 50% { transform: translate(60px, 22px) rotate(20deg) scale(1.15); } }
+/* 左右走動 48px；眼睛看前進方向；走路時兩組腳交替 */
+@keyframes wander {
+  0%, 10% { transform: translateX(0); }
+  40%, 55% { transform: translateX(-48px); }
+  85%, 100% { transform: translateX(0); }
+}
+@keyframes look {
+  0%, 8% { transform: translateX(0); }
+  12%, 38% { transform: translateX(-1px); }
+  42%, 53% { transform: translateX(0); }
+  57%, 83% { transform: translateX(1px); }
+  87%, 100% { transform: translateX(0); }
+}
+@keyframes legs-stand {
+  0% { opacity: 1; }
+  10% { opacity: 0; }
+  11.5% { opacity: 0; }
+  13% { opacity: 0; }
+  14.5% { opacity: 0; }
+  16% { opacity: 0; }
+  17.5% { opacity: 0; }
+  19% { opacity: 0; }
+  20.5% { opacity: 0; }
+  22% { opacity: 0; }
+  23.5% { opacity: 0; }
+  25% { opacity: 0; }
+  26.5% { opacity: 0; }
+  28% { opacity: 0; }
+  29.5% { opacity: 0; }
+  31% { opacity: 0; }
+  32.5% { opacity: 0; }
+  34% { opacity: 0; }
+  35.5% { opacity: 0; }
+  37% { opacity: 0; }
+  38.5% { opacity: 0; }
+  40% { opacity: 1; }
+  55% { opacity: 0; }
+  56.5% { opacity: 0; }
+  58% { opacity: 0; }
+  59.5% { opacity: 0; }
+  61% { opacity: 0; }
+  62.5% { opacity: 0; }
+  64% { opacity: 0; }
+  65.5% { opacity: 0; }
+  67% { opacity: 0; }
+  68.5% { opacity: 0; }
+  70% { opacity: 0; }
+  71.5% { opacity: 0; }
+  73% { opacity: 0; }
+  74.5% { opacity: 0; }
+  76% { opacity: 0; }
+  77.5% { opacity: 0; }
+  79% { opacity: 0; }
+  80.5% { opacity: 0; }
+  82% { opacity: 0; }
+  83.5% { opacity: 0; }
+  85% { opacity: 1; }
+}
+@keyframes legs-a {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  11.5% { opacity: 0; }
+  13% { opacity: 1; }
+  14.5% { opacity: 0; }
+  16% { opacity: 1; }
+  17.5% { opacity: 0; }
+  19% { opacity: 1; }
+  20.5% { opacity: 0; }
+  22% { opacity: 1; }
+  23.5% { opacity: 0; }
+  25% { opacity: 1; }
+  26.5% { opacity: 0; }
+  28% { opacity: 1; }
+  29.5% { opacity: 0; }
+  31% { opacity: 1; }
+  32.5% { opacity: 0; }
+  34% { opacity: 1; }
+  35.5% { opacity: 0; }
+  37% { opacity: 1; }
+  38.5% { opacity: 0; }
+  40% { opacity: 0; }
+  55% { opacity: 1; }
+  56.5% { opacity: 0; }
+  58% { opacity: 1; }
+  59.5% { opacity: 0; }
+  61% { opacity: 1; }
+  62.5% { opacity: 0; }
+  64% { opacity: 1; }
+  65.5% { opacity: 0; }
+  67% { opacity: 1; }
+  68.5% { opacity: 0; }
+  70% { opacity: 1; }
+  71.5% { opacity: 0; }
+  73% { opacity: 1; }
+  74.5% { opacity: 0; }
+  76% { opacity: 1; }
+  77.5% { opacity: 0; }
+  79% { opacity: 1; }
+  80.5% { opacity: 0; }
+  82% { opacity: 1; }
+  83.5% { opacity: 0; }
+  85% { opacity: 0; }
+}
+@keyframes legs-b {
+  0% { opacity: 0; }
+  10% { opacity: 0; }
+  11.5% { opacity: 1; }
+  13% { opacity: 0; }
+  14.5% { opacity: 1; }
+  16% { opacity: 0; }
+  17.5% { opacity: 1; }
+  19% { opacity: 0; }
+  20.5% { opacity: 1; }
+  22% { opacity: 0; }
+  23.5% { opacity: 1; }
+  25% { opacity: 0; }
+  26.5% { opacity: 1; }
+  28% { opacity: 0; }
+  29.5% { opacity: 1; }
+  31% { opacity: 0; }
+  32.5% { opacity: 1; }
+  34% { opacity: 0; }
+  35.5% { opacity: 1; }
+  37% { opacity: 0; }
+  38.5% { opacity: 1; }
+  40% { opacity: 0; }
+  55% { opacity: 0; }
+  56.5% { opacity: 1; }
+  58% { opacity: 0; }
+  59.5% { opacity: 1; }
+  61% { opacity: 0; }
+  62.5% { opacity: 1; }
+  64% { opacity: 0; }
+  65.5% { opacity: 1; }
+  67% { opacity: 0; }
+  68.5% { opacity: 1; }
+  70% { opacity: 0; }
+  71.5% { opacity: 1; }
+  73% { opacity: 0; }
+  74.5% { opacity: 1; }
+  76% { opacity: 0; }
+  77.5% { opacity: 1; }
+  79% { opacity: 0; }
+  80.5% { opacity: 1; }
+  82% { opacity: 0; }
+  83.5% { opacity: 1; }
+  85% { opacity: 0; }
+}
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.6px); } }
+@keyframes shadow { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.9); } }
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
-@keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 20% { transform: translateY(-10px); } 40% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-35deg); } }
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 20% { transform: translateY(-1.4px); } 40% { transform: translateY(0); } 50% { transform: translateY(-0.6px); } }
+@keyframes wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-0.4px); } 75% { transform: translateX(0.4px); } }
 
-/* 沒有待到貨：開心 */
-.mood-happy .eyes-open { display: none; }
-.mood-happy .eyes-happy { display: block; }
+/* 沒有待到貨：開心臉紅 */
+.mood-happy .cheeks { display: block; }
 
-/* 有 3 日內到貨：跳一跳、抱包裹、揮手 */
-.mood-soon .bob { animation: hop 2.6s ease-in-out infinite; }
+/* 有 3 日內到貨：抱包裹、蹦蹦跳、揮手、徽章 */
+.mood-soon .bob { animation: hop 1.8s ease-in-out infinite; }
 .mood-soon .box, .mood-overdue .box { display: block; }
-.mood-soon .arm.right { transform-origin: 92px 72px; animation: wave 1.3s ease-in-out infinite; }
+.mood-soon .arm.right { animation: wave 0.9s steps(2) infinite; }
 .mood-soon .badge, .mood-overdue .badge { display: block; }
 
-/* 有逾期：緊張、流汗、紅色徽章 */
-.mood-overdue .bob { animation: shake 0.5s ease-in-out infinite; animation-delay: 0s; }
-.mood-overdue .sweat { display: block; }
-.mood-overdue .mouth.smile { display: none; }
-.mood-overdue .mouth.oh { display: block; }
+/* 有逾期：停在原地發抖、流汗、張嘴、紅色徽章 */
+.mood-overdue #buddy, .mood-overdue .look, .mood-overdue .legs { animation: none; }
+.mood-overdue .legs-stand { opacity: 1; }
+.mood-overdue .bob { animation: shake 0.4s steps(2) infinite; }
+.mood-overdue .sweat, .mood-overdue .mouth.oh { display: block; }
 .mood-overdue .badge circle { fill: var(--overdue); }
 
-/* 未登入 / 錯誤：灰階 */
+/* 未登入 / 錯誤：灰階、不走動 */
 .mood-setup #sprite, .mood-error #sprite { filter: grayscale(0.85); opacity: 0.85; }
+.mood-setup #buddy, .mood-error #buddy, .mood-setup .look, .mood-error .look, .mood-setup .legs, .mood-error .legs { animation: none; }
+.mood-setup .legs-stand, .mood-error .legs-stand { opacity: 1; }
+
+/* 系統設定「減少動態效果」時不走動 */
+@media (prefers-reduced-motion: reduce) {
+  #buddy, .look, .legs, .bob, .shadow { animation: none; }
+  .legs-stand { opacity: 1; }
+}
 
 /* ── 對話泡泡 ── */
 #bubble {
-  position: relative; max-width: 240px; margin-right: 18px;
+  position: relative; max-width: 230px; margin-right: 18px;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border); border-radius: 14px;
   padding: 8px 12px; font-size: 13px; line-height: 1.4;

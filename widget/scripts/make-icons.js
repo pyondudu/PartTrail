@@ -4,25 +4,28 @@ const fs = require('fs')
 const path = require('path')
 
 const root = path.join(__dirname, '..', '..')
-const SPRITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 10 92 100">
-  <path d="M60 30c26 0 40 18 40 42 0 22-16 34-40 34S20 94 20 72c0-24 14-42 40-42z" fill="#d97757"/>
-  <path d="M60 10l2.4 9.6L72 22l-9.6 2.4L60 34l-2.4-9.6L48 22l9.6-2.4z" fill="#f6c45b"/>
-  <ellipse cx="46" cy="68" rx="5.5" ry="7.5" fill="#2b2a27"/><ellipse cx="74" cy="68" rx="5.5" ry="7.5" fill="#2b2a27"/>
-  <circle cx="48" cy="65" r="2" fill="#fff"/><circle cx="76" cy="65" r="2" fill="#fff"/>
-  <path d="M53 83q7 7 14 0" fill="none" stroke="#2b2a27" stroke-width="3" stroke-linecap="round"/>
+const SPRITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1 16 16" shape-rendering="crispEdges">
+  <g fill="#f6c45b"><rect x="7" y="0" width="2" height="3"/><rect x="6" y="1" width="4" height="1"/></g>
+  <g fill="#d97757">
+    <rect x="3" y="4" width="10" height="7"/><rect x="1" y="6" width="2" height="2"/><rect x="13" y="6" width="2" height="2"/>
+    <rect x="4" y="11" width="1" height="2"/><rect x="6" y="11" width="1" height="2"/><rect x="9" y="11" width="1" height="2"/><rect x="11" y="11" width="1" height="2"/>
+  </g>
+  <g fill="#2b2a27"><rect x="5" y="6" width="1" height="2"/><rect x="10" y="6" width="1" height="2"/></g>
 </svg>`
 const WEB = fs.readFileSync(path.join(root, 'web', 'public', 'icon.svg'), 'utf8')
 
 const jobs = [
   { svg: SPRITE, size: 256, out: path.join(__dirname, '..', 'build', 'icon.png') },
-  { svg: WEB, size: 192, out: path.join(root, 'web', 'public', 'icon-192.png') },
-  { svg: WEB, size: 512, out: path.join(root, 'web', 'public', 'icon-512.png') },
+  { svg: WEB, size: 192, out: path.join(root, 'web', 'public', 'icon-192.png'), web: true },
+  { svg: WEB, size: 512, out: path.join(root, 'web', 'public', 'icon-512.png'), web: true },
 ]
 
 app.disableHardwareAcceleration()
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ width: 512, height: 512, show: false, transparent: true, frame: false, useContentSize: true, webPreferences: { offscreen: true } })
-  for (const j of jobs) {
+  // npm run icons -- --widget-only：只重做精靈圖示
+  const widgetOnly = process.argv.includes('--widget-only')
+  for (const j of jobs.filter((j) => !(widgetOnly && j.web))) {
     win.setContentSize(j.size, j.size)
     const html = `<html><body style="margin:0;background:transparent"><img src="data:image/svg+xml;base64,${Buffer.from(j.svg).toString('base64')}" width="${j.size}" height="${j.size}" style="display:block"></body></html>`
     await win.loadURL('data:text/html;base64,' + Buffer.from(html).toString('base64'))

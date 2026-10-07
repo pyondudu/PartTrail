@@ -21,57 +21,70 @@
       <footer id="updated"></footer>
     </section>
 
-    <div id="bubble" class="hit" hidden></div>
+    <!-- 小精靈與對話泡泡一起左右走動，泡泡尾巴才會一直對準精靈 -->
+    <div id="buddy">
+      <div id="bubble" class="hit" hidden></div>
 
-    <div id="sprite" class="hit" title="點我看清單，拖曳可移動">
-      <svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true">
-        <defs>
-          <radialGradient id="body-g" cx="40%" cy="35%" r="70%">
-            <stop offset="0" stop-color="#f0a283" />
-            <stop offset="1" stop-color="#d97757" />
-          </radialGradient>
-        </defs>
-        <ellipse class="shadow" cx="60" cy="112" rx="30" ry="5" />
-        <g class="bob">
-          <!-- 頭上的星芒 -->
-          <g class="spark" transform="translate(60 22)">
-            <path d="M0-12 2.4-2.4 12 0 2.4 2.4 0 12-2.4 2.4-12 0-2.4-2.4z" fill="#f6c45b" />
-          </g>
-          <!-- 身體 -->
-          <path class="body" d="M60 30c26 0 40 18 40 42 0 22-16 34-40 34S20 94 20 72c0-24 14-42 40-42z" fill="url(#body-g)" />
-          <!-- 小手 -->
-          <ellipse class="arm left" cx="22" cy="78" rx="7" ry="10" fill="#d97757" />
-          <ellipse class="arm right" cx="98" cy="78" rx="7" ry="10" fill="#d97757" />
-          <!-- 臉 -->
-          <g class="eyes">
-            <g class="eyes-open">
-              <ellipse cx="46" cy="68" rx="5" ry="7" fill="#2b2a27" />
-              <ellipse cx="74" cy="68" rx="5" ry="7" fill="#2b2a27" />
-              <circle cx="48" cy="65" r="1.8" fill="#fff" />
-              <circle cx="76" cy="65" r="1.8" fill="#fff" />
+      <div id="sprite" class="hit" title="點我看清單，拖曳可移動">
+        <!-- 16×16 像素畫，放大 7 倍 -->
+        <svg viewBox="0 0 16 16" width="112" height="112" shape-rendering="crispEdges" aria-hidden="true">
+          <ellipse class="shadow" cx="8" cy="15.3" rx="4.6" ry="0.6" shape-rendering="auto" />
+          <g class="bob">
+            <!-- 頭上的星星 -->
+            <g class="spark" fill="#f6c45b">
+              <rect x="7" y="0" width="2" height="3" />
+              <rect x="6" y="1" width="4" height="1" />
             </g>
-            <g class="eyes-happy" fill="none" stroke="#2b2a27" stroke-width="3" stroke-linecap="round">
-              <path d="M40 70q6-8 12 0M68 70q6-8 12 0" />
+            <!-- 身體、小手 -->
+            <g fill="#d97757">
+              <rect class="body" x="3" y="4" width="10" height="7" />
+              <rect class="arm left" x="1" y="6" width="2" height="2" />
+              <rect class="arm right" x="13" y="6" width="2" height="2" />
+            </g>
+            <!-- 腳：停下時站好；走路時 a、b 兩組交替＝踏步（同一時間只顯示一組） -->
+            <g fill="#d97757">
+              <g class="legs legs-stand">
+                <rect x="4" y="11" width="1" height="2" /><rect x="6" y="11" width="1" height="2" />
+                <rect x="9" y="11" width="1" height="2" /><rect x="11" y="11" width="1" height="2" />
+              </g>
+              <g class="legs legs-a">
+                <rect x="4" y="11" width="1" height="2" /><rect x="6" y="11" width="1" height="1" />
+                <rect x="9" y="11" width="1" height="2" /><rect x="11" y="11" width="1" height="1" />
+              </g>
+              <g class="legs legs-b">
+                <rect x="4" y="11" width="1" height="1" /><rect x="6" y="11" width="1" height="2" />
+                <rect x="9" y="11" width="1" height="1" /><rect x="11" y="11" width="1" height="2" />
+              </g>
+            </g>
+            <!-- 臉：走路時眼睛看前進方向 -->
+            <g class="look">
+              <g class="eyes-open" fill="#2b2a27">
+                <rect x="5" y="6" width="1" height="2" />
+                <rect x="10" y="6" width="1" height="2" />
+              </g>
+              <g class="cheeks" fill="#f7b6a0">
+                <rect x="4" y="8" width="1" height="1" />
+                <rect x="11" y="8" width="1" height="1" />
+              </g>
+              <rect class="mouth oh" x="7" y="8" width="2" height="2" fill="#2b2a27" />
+            </g>
+            <!-- 汗滴（逾期時） -->
+            <g class="sweat" fill="#8fd3ff">
+              <rect x="1" y="3" width="1" height="2" /><rect x="2" y="4" width="1" height="1" />
+            </g>
+            <!-- 包裹（有到貨時抱著） -->
+            <g class="box">
+              <rect x="5" y="9" width="6" height="4" fill="#c99a66" />
+              <rect x="7" y="9" width="2" height="4" fill="#a87a48" />
             </g>
           </g>
-          <ellipse cx="38" cy="80" rx="6" ry="3.5" fill="#f7b6a0" opacity=".8" />
-          <ellipse cx="82" cy="80" rx="6" ry="3.5" fill="#f7b6a0" opacity=".8" />
-          <path class="mouth smile" d="M54 82q6 6 12 0" fill="none" stroke="#2b2a27" stroke-width="2.5" stroke-linecap="round" />
-          <ellipse class="mouth oh" cx="60" cy="85" rx="4" ry="5" fill="#2b2a27" />
-          <!-- 汗滴（逾期時） -->
-          <path class="sweat" d="M90 46q5 8 0 11-5-3 0-11z" fill="#8fd3ff" />
-          <!-- 包裹 -->
-          <g class="box" transform="translate(46 92)">
-            <rect width="28" height="18" rx="3" fill="#c99a66" />
-            <path d="M0 6h28M14 0v18" stroke="#a87a48" stroke-width="2" />
+          <!-- 數字徽章 -->
+          <g class="badge" shape-rendering="auto">
+            <circle cx="14" cy="2" r="2.3" />
+            <text x="14" y="2.95" text-anchor="middle" id="badge-num">0</text>
           </g>
-        </g>
-        <!-- 數字徽章 -->
-        <g class="badge">
-          <circle cx="100" cy="28" r="13" />
-          <text x="100" y="33" text-anchor="middle" id="badge-num">0</text>
-        </g>
-      </svg>
+        </svg>
+      </div>
     </div>
   </div>
 <script src="widget.js"></script>
