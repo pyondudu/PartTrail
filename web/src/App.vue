@@ -1,10 +1,12 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { configured, supabase } from './lib/supabase'
 import { store, initAuth } from './lib/store'
 import Login from './views/Login.vue'
 import { ICON } from './lib/util'
 
+const router = useRouter()
 const ready = ref(false)
 
 onMounted(async () => {
@@ -12,8 +14,10 @@ onMounted(async () => {
   ready.value = true
 })
 
-function logout() {
-  supabase.auth.signOut()
+// 登出後回到總表，下一個登入的人不會停在上一個人看的頁面
+async function logout() {
+  await supabase.auth.signOut()
+  router.replace('/')
 }
 </script>
 

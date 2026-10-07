@@ -75,3 +75,11 @@ export function progressText(item) {
   return lines.filter(Boolean).join('\n')
 }
 export const ICON = import.meta.env.BASE_URL + 'icon.svg'
+
+// 主管/同事用名字當帳號：Supabase 需要 Email，輸入沒有 @ 時補上這個假網域
+// （例：benson → benson@parttrail.local；在 Supabase 建帳號時也用這個格式）
+export const LOGIN_DOMAIN = 'parttrail.local'
+export function toLoginEmail(input) {
+  const v = input.trim().toLowerCase()
+  return v.includes('@') ? v : `${v}@${LOGIN_DOMAIN}`
+}

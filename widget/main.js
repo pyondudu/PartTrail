@@ -12,6 +12,13 @@ const ICON = path.join(__dirname, 'build', 'icon.png')
 // Linux 不支援 forward 滑鼠事件，穿透後就收不到 hover，因此只在 Windows/macOS 啟用
 const CLICK_THROUGH = process.platform !== 'linux'
 
+// 主管/同事用名字當帳號：沒有 @ 時補上假網域（與網頁 web/src/lib/util.js 相同）
+const LOGIN_DOMAIN = 'parttrail.local'
+function toLoginEmail(input) {
+  const v = String(input).trim().toLowerCase()
+  return v.includes('@') ? v : `${v}@${LOGIN_DOMAIN}`
+}
+
 let settings
 let supabase = null
 let channel = null
@@ -248,11 +255,11 @@ ipcMain.handle('login', async (_e, form) => {
   if (changedServer || !supabase) initClient()
   if (!supabase) return { ok: false, error: '請填寫 Supabase URL 與 anon key' }
   if (form.password) {
-    const { error } = await supabase.auth.signInWithPassword({ email: form.email.trim(), password: form.password })
+    const { error } = await supabase.auth.signInWithPassword({ email: toLoginEmail(form.email), password: form.password })
     if (error) return { ok: false, error: '登入失敗：' + error.message }
   }
   await refresh()
-  if (state.status === 'setup') return { ok: false, error: '尚未登入，請輸入 Email 與密碼' }
+  if (state.status === 'setup') return { ok: false, error: '尚未登入，請輸入帳號（或 Email）與密碼' }
   if (state.status === 'error') return { ok: false, error: '讀取資料失敗：' + state.error }
   return { ok: true }
 })

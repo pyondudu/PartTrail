@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
-import { ICON } from '../lib/util'
+import { ICON, toLoginEmail } from '../lib/util'
 
 const email = ref('')
 const password = ref('')
@@ -14,7 +14,7 @@ async function submit() {
   busy.value = true
   try {
     if (mode.value === 'password') {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
+      const { error } = await supabase.auth.signInWithPassword({ email: toLoginEmail(email.value), password: password.value })
       if (error) msg.value = '登入失敗：' + error.message
     } else {
       const { error } = await supabase.auth.signInWithOtp({
@@ -35,7 +35,8 @@ async function submit() {
     <h1>PartTrail</h1>
     <p class="muted">料件交期追蹤</p>
     <form @submit.prevent="submit">
-      <label>Email<input v-model="email" type="email" required autocomplete="email" /></label>
+      <label v-if="mode === 'password'" key="account">帳號或 Email<input v-model="email" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false" /></label>
+      <label v-else key="email">Email<input v-model="email" type="email" required autocomplete="email" /></label>
       <label v-if="mode === 'password'">密碼<input v-model="password" type="password" required autocomplete="current-password" /></label>
       <button class="btn primary block" :disabled="busy">{{ mode === 'password' ? '登入' : '寄送登入連結' }}</button>
     </form>
