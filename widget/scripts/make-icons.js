@@ -12,7 +12,7 @@ const SPRITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1 16 16" sha
   </g>
   <g fill="#2b2a27"><rect x="5" y="6" width="1" height="2"/><rect x="10" y="6" width="1" height="2"/></g>
 </svg>`
-const WEB = fs.readFileSync(path.join(root, 'web', 'public', 'icon.svg'), 'utf8')
+const WEB = fs.readFileSync(path.join(root, 'web', 'public', 'app-icon.svg'), 'utf8')
 
 const jobs = [
   { svg: SPRITE, size: 256, out: path.join(__dirname, '..', 'build', 'icon.png') },
@@ -23,9 +23,10 @@ const jobs = [
 app.disableHardwareAcceleration()
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ width: 512, height: 512, show: false, transparent: true, frame: false, useContentSize: true, webPreferences: { offscreen: true } })
-  // npm run icons -- --widget-only：只重做精靈圖示
+  // npm run icons -- --widget-only：只重做精靈圖示；--web-only：只重做手機圖示
   const widgetOnly = process.argv.includes('--widget-only')
-  for (const j of jobs.filter((j) => !(widgetOnly && j.web))) {
+  const webOnly = process.argv.includes('--web-only')
+  for (const j of jobs.filter((j) => !(widgetOnly && j.web) && !(webOnly && !j.web))) {
     win.setContentSize(j.size, j.size)
     const html = `<html><body style="margin:0;background:transparent"><img src="data:image/svg+xml;base64,${Buffer.from(j.svg).toString('base64')}" width="${j.size}" height="${j.size}" style="display:block"></body></html>`
     await win.loadURL('data:text/html;base64,' + Buffer.from(html).toString('base64'))
