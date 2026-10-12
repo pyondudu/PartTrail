@@ -69,6 +69,7 @@ window.pt.onExpand(() => setExpanded(true))
 window.pt.onState((s) => { state = s; render() })
 
 function setExpanded(v) {
+  if (v && !expanded) window.pt.refresh() // 打開面板時抓最新資料
   expanded = v
   render()
 }

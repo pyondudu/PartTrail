@@ -21,7 +21,6 @@ const DEFAULTS = {
   supabaseAnonKey: '',
   webUrl: '',
   soonDays: 3,
-  refreshMinutes: 30,
   notifyHour: 9,
   position: null,
   lastNotifiedDay: '',

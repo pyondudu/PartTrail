@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, screen, nativeImage } = require('electron')
+const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, screen, nativeImage, powerMonitor } = require('electron')
 const path = require('path')
 const { createClient } = require('@supabase/supabase-js')
 const WebSocket = require('ws')
@@ -8,6 +8,8 @@ const { demoItems } = require('./lib/demo')
 const DEMO = process.env.PARTTRAIL_DEMO === '1'
 const WIN_W = 320
 const WIN_H = 460
+// realtime 斷線時的備援輪詢間隔
+const POLL_MINUTES = 5
 const ICON = path.join(__dirname, 'build', 'icon.png')
 // Linux 不支援 forward 滑鼠事件，穿透後就收不到 hover，因此只在 Windows/macOS 啟用
 const CLICK_THROUGH = process.platform !== 'linux'
@@ -26,6 +28,8 @@ let widget = null
 let setupWin = null
 let tray = null
 let refreshTimer = null
+let retryTimer = null
+let retryDelay = 5000
 let state = { status: 'loading', items: [], updatedAt: null, error: '' }
 
 if (!app.requestSingleInstanceLock()) app.quit()
@@ -40,26 +44,61 @@ function dayStr(offset = 0) {
 
 // ─────────────────────────── Supabase ───────────────────────────
 function initClient() {
-  if (channel) { supabase.removeChannel(channel); channel = null }
+  dropChannel()
   supabase = null
   if (!settings.supabaseUrl || !settings.supabaseAnonKey) return false
   supabase = createClient(settings.supabaseUrl, settings.supabaseAnonKey, {
     auth: { storage: createSecureStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     realtime: { transport: WebSocket },
   })
+  // token 更新後同步給 realtime，否則 JWT 過期後 RLS 會擋掉推播
+  const client = supabase
+  client.auth.onAuthStateChange((event, session) => {
+    if (session && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) client.realtime.setAuth(session.access_token)
+  })
   return true
 }
 
-function subscribeRealtime() {
+function dropChannel() {
+  clearTimeout(retryTimer)
+  if (!channel) return
+  const ch = channel
+  channel = null // 先清掉，removeChannel 觸發的 CLOSED 就不會再排重連
+  supabase?.removeChannel(ch)
+}
+
+async function subscribeRealtime() {
   if (channel || !supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session || channel) return
+  await supabase.realtime.setAuth(session.access_token)
+  if (channel) return
   let t = null
-  channel = supabase
+  const ch = supabase
     .channel('widget-items')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
       clearTimeout(t)
       t = setTimeout(refresh, 1500)
     })
-    .subscribe()
+  channel = ch
+  ch.subscribe((status) => {
+    if (ch !== channel) return
+    if (status === 'SUBSCRIBED') {
+      retryDelay = 5000
+      refresh() // 補抓斷線期間漏掉的變更
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+      // 睡眠、斷網或 token 過期後頻道會失效，重建頻道
+      dropChannel()
+      retryTimer = setTimeout(subscribeRealtime, retryDelay)
+      retryDelay = Math.min(retryDelay * 2, 60000)
+    }
+  })
+}
+
+function reconnect() {
+  dropChannel()
+  retryDelay = 5000
+  refresh()
 }
 
 async function refresh() {
@@ -270,7 +309,7 @@ ipcMain.handle('login', async (_e, form) => {
 
 ipcMain.handle('logout', async () => {
   if (supabase) await supabase.auth.signOut()
-  if (channel) { supabase.removeChannel(channel); channel = null }
+  dropChannel()
   setState({ status: 'setup', items: [] })
   return { ok: true }
 })
@@ -300,8 +339,10 @@ app.whenReady().then(async () => {
   await refresh()
   if (state.status === 'setup' && !DEMO) openSetup()
 
-  refreshTimer = setInterval(refresh, settings.refreshMinutes * 60 * 1000)
+  refreshTimer = setInterval(refresh, POLL_MINUTES * 60 * 1000)
   setInterval(tick, 60 * 1000)
+  powerMonitor.on('resume', reconnect)
+  powerMonitor.on('unlock-screen', reconnect)
 })
 
 // 精靈常駐系統匣，關閉設定視窗不結束程式
