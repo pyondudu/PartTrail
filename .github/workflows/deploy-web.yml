@@ -1,6 +1,5 @@
 # 把網頁部署到 GitHub Pages（Repo → Settings → Pages → Source 選 GitHub Actions）
 # 需要 Secrets：SUPABASE_URL、SUPABASE_ANON_KEY
-# 朋友的站台（/maru/）另需 MARU_SUPABASE_URL、MARU_SUPABASE_ANON_KEY，沒設定就跳過
 name: Deploy web
 on:
   workflow_dispatch:
@@ -13,9 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
     defaults: { run: { working-directory: web } }
-    env:
-      MARU_SUPABASE_URL: ${{ secrets.MARU_SUPABASE_URL }}
-      MARU_SUPABASE_ANON_KEY: ${{ secrets.MARU_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,13 +21,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - name: Build maru site
-        if: env.MARU_SUPABASE_URL != ''
-        run: npx vite build --outDir dist/maru --emptyOutDir
-        env:
-          VITE_SITE: maru
-          VITE_SUPABASE_URL: ${{ env.MARU_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ env.MARU_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with: { path: web/dist }
       - id: deploy

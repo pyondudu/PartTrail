@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// 同一份程式可建出多個站台：VITE_SITE=maru npm run build
+// 同一份程式可建出多個站台：VITE_SITE=<站名> npm run build
 // 各站的名稱與圖示放在 sites/<站名>/（site.json、app-icon.svg、icon-192.png、icon-512.png）
 const site = process.env.VITE_SITE || 'main'
 const siteDir = path.resolve(__dirname, 'sites', site)
