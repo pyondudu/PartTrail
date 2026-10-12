@@ -98,7 +98,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
   position: sticky; top: 0; z-index: 10;
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
-  background: var(--surface); border-bottom: 1px solid var(--border);
+  background: var(--surface); border-bottom: var(--topbar-border, 1px solid var(--border));
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; }
 .topbar-right { display: flex; align-items: center; gap: 8px; }

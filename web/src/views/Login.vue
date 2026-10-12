@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
-import { ICON, toLoginEmail } from '../lib/util'
+import { ICON, SITE_NAME, toLoginEmail } from '../lib/util'
 
 const email = ref('')
 const password = ref('')
@@ -32,7 +32,7 @@ async function submit() {
 <template>
   <div class="center-box card login">
     <img :src="ICON" alt="" width="56" height="56" />
-    <h1>PartTrail</h1>
+    <h1>{{ SITE_NAME }}</h1>
     <p class="muted">料件交期追蹤</p>
     <form @submit.prevent="submit">
       <label v-if="mode === 'password'" key="account">帳號或 Email<input v-model="email" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false" /></label>

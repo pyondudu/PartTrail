@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { configured, supabase } from './lib/supabase'
 import { store, initAuth } from './lib/store'
 import Login from './views/Login.vue'
-import { ICON } from './lib/util'
+import { ICON, SITE_NAME } from './lib/util'
 
 const router = useRouter()
 const ready = ref(false)
@@ -32,7 +32,7 @@ async function logout() {
       <header class="topbar">
         <router-link to="/" class="brand">
           <img :src="ICON" alt="" width="28" height="28" />
-          <span>PartTrail</span>
+          <span>{{ SITE_NAME }}</span>
         </router-link>
         <div class="topbar-right">
           <span class="role-tag" :class="store.role">{{ store.isEditor ? '編輯者' : '唯讀' }}</span>

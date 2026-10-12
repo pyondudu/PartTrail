@@ -12,13 +12,14 @@ const SPRITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1 16 16" sha
   </g>
   <g fill="#2b2a27"><rect x="5" y="6" width="1" height="2"/><rect x="10" y="6" width="1" height="2"/></g>
 </svg>`
-const WEB = fs.readFileSync(path.join(root, 'web', 'public', 'app-icon.svg'), 'utf8')
+const sitesDir = path.join(root, 'web', 'sites')
 
-const jobs = [
-  { svg: SPRITE, size: 256, out: path.join(__dirname, '..', 'build', 'icon.png') },
-  { svg: WEB, size: 192, out: path.join(root, 'web', 'public', 'icon-192.png'), web: true },
-  { svg: WEB, size: 512, out: path.join(root, 'web', 'public', 'icon-512.png'), web: true },
-]
+// 精靈圖示 + 每個網站（web/sites/<站名>/app-icon.svg）的手機圖示
+const jobs = [{ svg: SPRITE, size: 256, out: path.join(__dirname, '..', 'build', 'icon.png') }]
+for (const site of fs.readdirSync(sitesDir)) {
+  const svg = fs.readFileSync(path.join(sitesDir, site, 'app-icon.svg'), 'utf8')
+  for (const size of [192, 512]) jobs.push({ svg, size, out: path.join(sitesDir, site, `icon-${size}.png`), web: true })
+}
 
 app.disableHardwareAcceleration()
 app.whenReady().then(async () => {
