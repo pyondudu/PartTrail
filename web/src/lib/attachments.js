@@ -17,3 +17,22 @@ export async function uploadAttachments(itemId, files) {
     if (ins.error) throw ins.error
   }
 }
+
+// 手機拍照檔名常都是 image.jpg：與已有檔名重複時依序改名為 image-2.jpg、image-3.jpg…，方便分辨頁序
+export function renameDuplicates(files, existingNames = []) {
+  const used = new Set(existingNames)
+  return files.map((f) => {
+    let name = f.name
+    if (used.has(name)) {
+      const dot = name.lastIndexOf('.')
+      const base = dot > 0 ? name.slice(0, dot) : name
+      const ext = dot > 0 ? name.slice(dot) : ''
+      let n = 2
+      while (used.has(`${base}-${n}${ext}`)) n++
+      name = `${base}-${n}${ext}`
+      f = new File([f], name, { type: f.type, lastModified: f.lastModified })
+    }
+    used.add(name)
+    return f
+  })
+}

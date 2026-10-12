@@ -1,9 +1,9 @@
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
-import { uploadAttachments } from '../lib/attachments'
+import { uploadAttachments, renameDuplicates } from '../lib/attachments'
 import { STATUS, STATUS_KEYS, todayStr } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -59,12 +59,33 @@ function nameList(table, field, label) {
 const vendors = nameList('vendors', 'vendor', '廠商')
 const requesters = nameList('requesters', 'requester', '需求人')
 
-// 儲存時一併上傳的附檔
+// 單位：常用的直接選，其他可當場輸入；編輯舊資料時不在清單上的值也保留顯示
+const UNITS = ['pcs', 'set']
+const extraUnits = ref([])
+const units = computed(() => [...new Set([...UNITS, ...extraUnits.value, form.unit].filter(Boolean))])
+watch(() => form.unit, (v, prev) => {
+  if (v !== ADD_NEW) return
+  form.unit = prev
+  const name = window.prompt('輸入單位：')?.trim()
+  if (!name) return
+  if (!units.value.includes(name)) extraUnits.value.push(name)
+  form.unit = name
+})
+
+// 儲存時一併上傳的附檔（多頁報價單可連續拍照或多選）；圖片附縮圖預覽
 const pending = ref([])
 function addFiles(e) {
-  pending.value.push(...e.target.files)
+  const files = renameDuplicates([...e.target.files], pending.value.map((p) => p.file.name))
   e.target.value = ''
+  for (const file of files) {
+    pending.value.push({ file, url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null })
+  }
 }
+function removePending(i) {
+  const [p] = pending.value.splice(i, 1)
+  if (p.url) URL.revokeObjectURL(p.url)
+}
+onBeforeUnmount(() => pending.value.forEach((p) => p.url && URL.revokeObjectURL(p.url)))
 
 function setStatus(k) {
   form.status = k
@@ -122,7 +143,7 @@ async function save() {
   if (error) { busy.value = false; err.value = '儲存失敗：' + error.message; return }
   if (pending.value.length) {
     try {
-      await uploadAttachments(data.id, pending.value)
+      await uploadAttachments(data.id, pending.value.map((p) => p.file))
     } catch (e) {
       alert('料件已儲存，但附檔上傳失敗：' + e.message + '\n請到詳細頁重新上傳。')
     }
@@ -164,7 +185,12 @@ async function save() {
         </label>
         <label class="span2">規格 / 說明<textarea v-model="form.spec" rows="2" placeholder="細節可直接看報價單附檔" /></label>
         <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
-        <label>單位<input v-model="form.unit" /></label>
+        <label>單位
+          <select v-model="form.unit">
+            <option v-for="u in units" :key="u" :value="u">{{ u }}</option>
+            <option :value="ADD_NEW">＋ 其他…</option>
+          </select>
+        </label>
       </div>
     </fieldset>
 
@@ -186,20 +212,25 @@ async function save() {
         <span>附檔（報價單等）</span>
         <div class="head-actions">
           <label class="btn ghost small">
-            📷 拍照<input type="file" accept="image/*" capture="environment" hidden @change="addFiles" />
+            📷 {{ pending.length ? '再拍一頁' : '拍照' }}<input type="file" accept="image/*" capture="environment" hidden @change="addFiles" />
           </label>
           <label class="btn ghost small">
-            📎 選擇檔案<input type="file" accept="image/*,application/pdf" multiple hidden @change="addFiles" />
+            📎 {{ pending.length ? '再加檔案' : '選擇檔案' }}<input type="file" accept="image/*,application/pdf" multiple hidden @change="addFiles" />
           </label>
         </div>
       </div>
       <p v-if="!pending.length" class="muted">{{ isNew ? '尚未選擇附檔' : '已上傳的附檔請到詳細頁查看' }}</p>
       <ul class="files">
-        <li v-for="(f, i) in pending" :key="i">
-          <span class="file-name">{{ f.name }}</span>
-          <button type="button" class="btn link danger" @click="pending.splice(i, 1)">移除</button>
+        <li v-for="(p, i) in pending" :key="p.file.name">
+          <span class="file">
+            <img v-if="p.url" :src="p.url" alt="" />
+            <span v-else class="file-icon">PDF</span>
+            <span class="file-name">{{ p.file.name }}</span>
+          </span>
+          <button type="button" class="btn link danger" @click="removePending(i)">移除</button>
         </li>
       </ul>
+      <p v-if="pending.length" class="muted">已選 {{ pending.length }} 個檔案，儲存時一起上傳。多頁報價單可連續拍照，或一次選取多個檔案。</p>
     </fieldset>
 
     <fieldset v-if="form.status !== 'quoted'" class="card">

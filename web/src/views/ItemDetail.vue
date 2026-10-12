@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
-import { uploadAttachments } from '../lib/attachments'
+import { uploadAttachments, renameDuplicates } from '../lib/attachments'
 import { STATUS, urgency, daysText, fmtDate, fmtDateTime, fmtMoney, progressText, todayStr } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -67,7 +67,7 @@ async function markReceived() {
 }
 
 async function upload(e) {
-  const list = [...e.target.files]
+  const list = renameDuplicates([...e.target.files], files.value.map((f) => f.file_name))
   e.target.value = ''
   if (!list.length) return
   uploading.value = true
