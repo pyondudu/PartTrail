@@ -200,6 +200,16 @@ function createWidget() {
   widget.loadFile(path.join(__dirname, 'renderer', 'index.html'))
   widget.once('ready-to-show', () => widget.showInactive())
   widget.webContents.on('did-finish-load', () => setState({}))
+  // Windows 螢幕縮放非 100% 時，移動視窗會讓尺寸累積誤差而越變越寬；一有變動就校正回固定尺寸
+  widget.on('resize', () => {
+    const [w, h] = widget.getSize()
+    if (w !== WIN_W || h !== WIN_H) moveWidget(...widget.getPosition())
+  })
+}
+
+// 移動一律用 setBounds 連同尺寸一起設定，避免 setPosition 在高 DPI 下撐大視窗
+function moveWidget(x, y) {
+  widget.setBounds({ x: Math.round(x), y: Math.round(y), width: WIN_W, height: WIN_H })
 }
 
 function openSetup() {
@@ -243,7 +253,7 @@ function updateTray() {
       settings.autoLaunch = mi.checked
       saveSettings(settings)
     } },
-    { label: '回到預設位置', click: () => { widget.setPosition(...Object.values(defaultPosition())); savePosition() } },
+    { label: '回到預設位置', click: () => { const p = defaultPosition(); moveWidget(p.x, p.y); savePosition() } },
     { label: '設定 / 登入…', click: openSetup },
     { type: 'separator' },
     { label: '結束', click: () => app.quit() },
@@ -262,7 +272,7 @@ ipcMain.on('set-ignore-mouse', (_e, ignore) => CLICK_THROUGH && widget?.setIgnor
 let dragStart = null
 ipcMain.on('drag-start', () => { dragStart = widget.getPosition() })
 ipcMain.on('drag-move', (_e, { dx, dy }) => {
-  if (dragStart) widget.setPosition(Math.round(dragStart[0] + dx), Math.round(dragStart[1] + dy))
+  if (dragStart) moveWidget(dragStart[0] + dx, dragStart[1] + dy)
 })
 ipcMain.on('drag-end', () => { dragStart = null; savePosition() })
 

@@ -8,6 +8,8 @@ import path from 'node:path'
 const site = process.env.VITE_SITE || 'main'
 const siteDir = path.resolve(__dirname, 'sites', site)
 const cfg = JSON.parse(fs.readFileSync(path.join(siteDir, 'site.json'), 'utf8'))
+// 每次建置的版本號；同時寫進程式與 version.json，App 比對兩者就知道有沒有新版
+const BUILD_ID = new Date().toISOString()
 
 // site.json 的 theme 覆蓋 style.css 的色彩變數；用 [data-site] 提高權重
 function themeStyle() {
@@ -28,6 +30,7 @@ function siteFiles() {
         { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
       ],
     }, null, 2),
+    'version.json': JSON.stringify({ build: BUILD_ID }),
   }
   for (const f of fs.readdirSync(siteDir)) if (f !== 'site.json') files[f] = fs.readFileSync(path.join(siteDir, f))
   return files
@@ -42,7 +45,7 @@ function sitePlugin() {
       server.middlewares.use((req, res, next) => {
         const body = siteFiles()[req.url.split('?')[0].replace(/^\//, '')]
         if (!body) return next()
-        res.setHeader('Content-Type', req.url.includes('.svg') ? 'image/svg+xml' : req.url.includes('.png') ? 'image/png' : 'application/manifest+json')
+        res.setHeader('Content-Type', req.url.includes('.svg') ? 'image/svg+xml' : req.url.includes('.png') ? 'image/png' : req.url.includes('.json') ? 'application/json' : 'application/manifest+json')
         res.end(body)
       })
     },
@@ -55,6 +58,6 @@ function sitePlugin() {
 // base 設為相對路徑，部署到 GitHub Pages 子目錄或 Netlify 皆可
 export default defineConfig({
   base: './',
-  define: { __SITE_NAME__: JSON.stringify(cfg.name) },
+  define: { __SITE_NAME__: JSON.stringify(cfg.name), __BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [vue(), sitePlugin()],
 })
