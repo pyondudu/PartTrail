@@ -157,7 +157,7 @@ async function removeItem() {
         <dt>請購單號</dt><dd>{{ invoice.pr_no || '—' }}</dd>
         <dt>交易條件</dt><dd>{{ invoice.payment_terms || '—' }}</dd>
         <dt>預計付款日</dt><dd>{{ fmtDate(invoice.pay_due_date) }}</dd>
-        <dt>試算表</dt><dd>{{ invoice.exported_at ? '已貼上' : '未貼上' }}</dd>
+        <dt>試算表</dt><dd><span :class="invoice.exported_at ? 'pasted' : 'warn'">{{ invoice.exported_at ? '已貼上' : '未貼上' }}</span></dd>
       </dl>
     </section>
 

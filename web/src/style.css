@@ -230,7 +230,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .inv-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
 .inv-list li:first-child { border-top: 0; }
 .small { font-size: 0.8rem; }
-.ok { color: var(--done); }
+.pasted { display: inline-block; padding: 0 6px; border: 1px solid var(--done); border-radius: 4px; background: var(--done-bg); color: var(--done); font-weight: 600; }
 .inv-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
 .inv-items.invalid { border-color: var(--overdue); background: var(--overdue-bg); }
 .check { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; color: var(--text); font-size: 0.95rem; cursor: pointer; }

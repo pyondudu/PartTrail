@@ -301,7 +301,7 @@ async function removeInvoice() {
             <strong>{{ inv.vendor }}</strong> <span class="muted">{{ inv.invoice_no }} · {{ fmtDate(inv.invoice_date) }}</span>
             <div class="muted small">
               NT${{ fmtMoney(inv.amount) }} · 預計付款 {{ fmtDate(inv.pay_due_date) }} ·
-              <span :class="inv.exported_at ? 'ok' : 'warn'">{{ inv.exported_at ? '已貼上' : '未貼上' }}</span>
+              <span :class="inv.exported_at ? 'pasted' : 'warn'">{{ inv.exported_at ? '已貼上' : '未貼上' }}</span>
             </div>
           </div>
           <div class="head-actions">
