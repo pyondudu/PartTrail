@@ -46,55 +46,23 @@ export const COLUMNS = ['日期', '廠商', '報價單編號', '品項', '金額
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-// 同時放 HTML 表格（多行品項貼上後留在同一格）與純文字
-export async function copyRow(inv) {
-  const row = buildRow(inv)
-  const html = '<table><tr>' + row.map((c) => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('') + '</tr></table>'
-  const tsv = row.map((c) => (/[\t\n"]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join('\t')
-  if (window.ClipboardItem && navigator.clipboard?.write) {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([tsv], { type: 'text/plain' }),
-      }),
-    ])
-  } else {
-    await navigator.clipboard.writeText(tsv)
+// 複製一或多列：同時放 HTML 表格（多行品項貼上後留在同一格）與純文字；貼在試算表最下方空白列的 A 欄
+export async function copyRows(invs) {
+  const rows = invs.map(buildRow)
+  const html = '<table>' + rows.map((r) => '<tr>' + r.map((c) => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('') + '</tr>').join('') + '</table>'
+  const tsv = rows.map((r) => r.map((c) => (/[\t\n"]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join('\t')).join('\n')
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([tsv], { type: 'text/plain' }),
+        }),
+      ])
+    } else {
+      await navigator.clipboard.writeText(tsv)
+    }
+  } catch {
+    window.prompt('請手動複製：', tsv)
   }
-}
-
-// Google Apps Script 連線設定：只存在這台裝置的瀏覽器，不放進公開的程式碼
-const SHEET_KEY = 'parttrail.sheet'
-export function loadSheetConfig() {
-  try { return JSON.parse(localStorage.getItem(SHEET_KEY)) || { url: '', token: '' } } catch { return { url: '', token: '' } }
-}
-export function saveSheetConfig(cfg) {
-  try { localStorage.setItem(SHEET_KEY, JSON.stringify({ url: cfg.url.trim(), token: cfg.token.trim() })) } catch {}
-}
-
-async function postSheet(body) {
-  const { url, token } = loadSheetConfig()
-  if (!url || !token) throw new Error('尚未設定 Google 試算表連線')
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 避免 CORS preflight
-    body: JSON.stringify({ token, ...body }),
-  })
-  let data
-  try { data = await res.json() } catch { throw new Error('試算表回應無法解讀（請確認網址與部署權限）') }
-  if (!data.ok) throw new Error(data.error || '寫入失敗')
-  return data
-}
-
-// 只檢查密鑰與標題列，不寫入
-export const testSheet = () => postSheet({ action: 'ping' })
-
-// 試算表端只會附加在最後一列之後；回傳 { row, warning? }
-export function appendToSheet(inv) {
-  return postSheet({
-    invoice_date: inv.invoice_date, // 日期欄以真正的日期寫入（顯示為 M/D）
-    invoice_no: inv.invoice_no,
-    amount: Number(inv.amount),
-    row: buildRow(inv),
-  })
 }

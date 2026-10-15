@@ -13,8 +13,8 @@ create table if not exists public.invoices (
   payment_terms text,              -- 交易條件，例：Net 90days
   pay_method    text,              -- 付款方式，接在預計付款日後（例：匯款）
   pay_due_date  date,              -- 預計付款日
-  sheet_row     int,               -- 已寫入 Google 試算表的列號
-  exported_at   timestamptz,
+  sheet_row     int,               -- 未使用（保留）
+  exported_at   timestamptz,       -- 已貼到試算表的時間
   created_at    timestamptz not null default now()
 );
 

@@ -1,9 +1,9 @@
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { fmtDate, fmtMoney, todayStr } from '../lib/util'
-import { COLUMNS, buildRow, itemsText, payDueDate, copyRow, appendToSheet, testSheet, loadSheetConfig, saveSheetConfig } from '../lib/payables'
+import { COLUMNS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
 
 const invoices = ref([])
 const vendorTerms = ref({})
@@ -68,7 +68,7 @@ function startNew(g) {
     invoice_date, invoice_no: '', amount: null,
     items_text: itemsText(g.items), pr_no: '', payment_terms: terms, pay_method: '匯款',
     pay_due_date: payDueDate(invoice_date, terms),
-    sheet_row: null, exported_at: null,
+    exported_at: null,
     itemIds: new Set(g.items.map((i) => i.id)),
   })
 }
@@ -160,64 +160,46 @@ async function save() {
   if (inv) { flash('發票已儲存'); edit.value = null }
 }
 
-async function saveAndWrite() {
-  if (edit.value.sheet_row && !confirm(`這張發票已在 ${fmtDate(edit.value.exported_at?.slice(0, 10))} 寫入試算表第 ${edit.value.sheet_row} 列。\n確定要再寫入一列？（試算表端仍會擋下重複的發票號碼）`)) return
-  busy.value = true
-  try {
-    const inv = await saveInvoice()
-    if (!inv) return
-    const { row, warning } = await appendToSheet(inv)
-    await supabase.from('invoices').update({ sheet_row: row, exported_at: new Date().toISOString() }).eq('id', inv.id)
-    await loadInvoices()
-    edit.value = null
-    flash(`已寫入試算表第 ${row} 列`)
-    if (warning) alert(warning)
-  } catch (e) {
-    err.value = '寫入試算表失敗：' + e.message + '（發票資料已儲存，可改用「複製這列」貼上）'
-  } finally {
-    busy.value = false
-  }
+// 已貼上：用 exported_at 記錄，避免漏貼或重複貼
+async function setPasted(invs, pasted) {
+  const ids = invs.map((v) => v.id).filter(Boolean)
+  if (!ids.length) return
+  const { error } = await supabase.from('invoices').update({ exported_at: pasted ? new Date().toISOString() : null }).in('id', ids)
+  if (error) return alert(error.message)
+  await loadInvoices()
+  if (edit.value?.id && ids.includes(edit.value.id)) edit.value.exported_at = pasted ? new Date().toISOString() : null
+  checked.value = new Set()
+  flash(pasted ? `已標記 ${ids.length} 張為已貼上` : '已取消標記')
 }
 
-async function copy(inv) {
-  try {
-    await copyRow(inv)
-    flash('已複製，到試算表最下方空白列的 A 欄貼上')
-  } catch {
-    window.prompt('請手動複製：', buildRow(inv).join('\t'))
-  }
+async function copy(invs) {
+  await copyRows(invs)
+  flash(`已複製 ${invs.length} 列，到試算表最下方空白列的 A 欄貼上`)
+}
+
+// 已登打清單勾選：一次複製多列（依發票日期排序）或一起標記
+const checked = ref(new Set())
+const checkedList = computed(() =>
+  invoices.value.filter((v) => checked.value.has(v.id))
+    .sort((a, b) => a.invoice_date.localeCompare(b.invoice_date) || a.created_at.localeCompare(b.created_at)),
+)
+function toggleChecked(id) {
+  const s = new Set(checked.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  checked.value = s
+}
+function checkUnpasted() {
+  checked.value = new Set(invoices.value.filter((v) => !v.exported_at).map((v) => v.id))
 }
 
 async function removeInvoice() {
-  if (!confirm(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已寫入試算表的那列不會被刪除。`)) return
+  if (!confirm(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已貼到試算表的那列請自行刪除。`)) return
   const { error } = await supabase.from('invoices').delete().eq('id', edit.value.id)
   if (error) return alert(error.message)
   edit.value = null
   await loadInvoices()
 }
 
-// ── 試算表連線設定 ──
-const sheet = reactive(loadSheetConfig())
-const showSettings = ref(!sheet.url)
-const sheetReady = computed(() => !!(sheet.url && sheet.token))
-function saveSettings() {
-  saveSheetConfig(sheet)
-  showSettings.value = false
-  flash('已儲存連線設定（只存在這台裝置）')
-}
-const testing = ref(false)
-async function test() {
-  saveSheetConfig(sheet)
-  testing.value = true
-  try {
-    const r = await testSheet()
-    alert(`連線成功：工作表「${r.sheet}」，目前最後一列是第 ${r.lastRow} 列（測試不會寫入任何資料）`)
-  } catch (e) {
-    alert('連線失敗：' + e.message)
-  } finally {
-    testing.value = false
-  }
-}
 </script>
 
 <template>
@@ -226,21 +208,7 @@ async function test() {
     <div class="page-head">
       <router-link to="/" class="btn ghost small">← 總表</router-link>
       <h2>應付帳款</h2>
-      <button class="btn ghost small" @click="showSettings = !showSettings">⚙ 試算表連線{{ sheetReady ? '' : '（未設定）' }}</button>
     </div>
-
-    <section v-if="showSettings" class="card">
-      <h3>Google 試算表連線</h3>
-      <p class="muted">填入公司帳號部署的 Apps Script 網址與密鑰（設定方式見 README「應付帳款」）。只存在這台裝置的瀏覽器。未設定時仍可用「複製這列」貼上。</p>
-      <div class="grid">
-        <label class="span2">網頁應用程式網址<input v-model="sheet.url" placeholder="https://script.google.com/macros/s/…/exec" /></label>
-        <label class="span2">密鑰（TOKEN）<input v-model="sheet.token" type="password" autocomplete="off" /></label>
-      </div>
-      <div class="form-actions">
-        <button class="btn ghost small" :disabled="testing || !sheet.url || !sheet.token" @click="test">{{ testing ? '測試中…' : '測試連線' }}</button>
-        <button class="btn primary small" @click="saveSettings">儲存</button>
-      </div>
-    </section>
 
     <section v-if="edit" class="card inv-editor">
       <div class="section-head">
@@ -272,7 +240,7 @@ async function test() {
         <label class="span2">品項<textarea v-model="edit.items_text" rows="4" @input="textTouched = true" /></label>
       </div>
 
-      <h3 class="preview-title">寫入試算表的內容</h3>
+      <h3 class="preview-title">貼到試算表的內容</h3>
       <div class="sheet-preview">
         <table>
           <thead><tr><th v-for="c in COLUMNS" :key="c">{{ c }}</th></tr></thead>
@@ -280,16 +248,14 @@ async function test() {
         </table>
       </div>
 
-      <p v-if="edit.sheet_row" class="muted">已於 {{ fmtDate(edit.exported_at?.slice(0, 10)) }} 寫入試算表第 {{ edit.sheet_row }} 列。</p>
+      <p v-if="edit.exported_at" class="muted">已於 {{ fmtDate(edit.exported_at.slice(0, 10)) }} 標記為已貼上。</p>
       <p v-if="err" class="msg error">{{ err }}</p>
       <div class="form-actions wrap">
         <button v-if="edit.id" class="btn link danger" :disabled="busy" @click="removeInvoice">刪除發票</button>
         <span class="spacer" />
-        <button class="btn ghost" :disabled="busy" @click="copy(edit)">📋 複製這列</button>
-        <button class="btn ghost" :disabled="busy" @click="save">儲存</button>
-        <button class="btn primary" :disabled="busy || !sheetReady" :title="sheetReady ? '' : '請先設定試算表連線'" @click="saveAndWrite">
-          {{ busy ? '處理中…' : '儲存並寫入試算表' }}
-        </button>
+        <button v-if="edit.id" class="btn ghost" :disabled="busy" @click="setPasted([edit], !edit.exported_at)">{{ edit.exported_at ? '取消已貼上' : '✓ 標記已貼上' }}</button>
+        <button class="btn ghost" :disabled="busy" @click="copy([edit])">📋 複製這列</button>
+        <button class="btn primary" :disabled="busy" @click="save">{{ busy ? '儲存中…' : '儲存' }}</button>
       </div>
     </section>
 
@@ -308,19 +274,29 @@ async function test() {
     </section>
 
     <section class="card">
-      <h3>已登打發票</h3>
+      <div class="section-head">
+        <h3>已登打發票</h3>
+        <button v-if="invoices.some((v) => !v.exported_at)" class="btn link" @click="checkUnpasted">勾選全部未貼上</button>
+      </div>
+      <div v-if="checked.size" class="batch-bar">
+        <span>已勾選 {{ checked.size }} 張</span>
+        <button class="btn small primary" @click="copy(checkedList)">📋 複製 {{ checked.size }} 列</button>
+        <button class="btn small ghost" @click="setPasted(checkedList, true)">✓ 標記已貼上</button>
+        <button class="btn link" @click="checked = new Set()">清除</button>
+      </div>
       <p v-if="!invoices.length" class="muted">尚無發票</p>
       <ul class="inv-list">
         <li v-for="inv in invoices" :key="inv.id">
-          <div>
+          <input type="checkbox" class="inv-check" :checked="checked.has(inv.id)" @change="toggleChecked(inv.id)" />
+          <div class="inv-main">
             <strong>{{ inv.vendor }}</strong> <span class="muted">{{ inv.invoice_no }} · {{ fmtDate(inv.invoice_date) }}</span>
             <div class="muted small">
               NT${{ fmtMoney(inv.amount) }} · 預計付款 {{ fmtDate(inv.pay_due_date) }} ·
-              <span :class="inv.sheet_row ? 'ok' : 'warn'">{{ inv.sheet_row ? `已寫入第 ${inv.sheet_row} 列` : '未寫入試算表' }}</span>
+              <span :class="inv.exported_at ? 'ok' : 'warn'">{{ inv.exported_at ? '已貼上' : '未貼上' }}</span>
             </div>
           </div>
           <div class="head-actions">
-            <button class="btn small ghost" @click="copy(inv)">📋</button>
+            <button class="btn small ghost" title="複製這列" @click="copy([inv])">📋</button>
             <button class="btn small ghost" @click="startEdit(inv)">編輯</button>
           </div>
         </li>

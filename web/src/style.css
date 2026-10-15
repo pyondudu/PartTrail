@@ -241,6 +241,9 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .sheet-preview th, .sheet-preview td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; vertical-align: middle; white-space: nowrap; }
 .sheet-preview td.pre { white-space: pre; }
 .sheet-preview th { background: var(--surface-2); font-weight: 600; }
+.inv-check { width: auto; flex-shrink: 0; align-self: flex-start; margin-top: 5px; }
+.inv-main { flex: 1; min-width: 0; }
+.batch-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; margin-bottom: 6px; border-radius: 10px; background: var(--surface-2); }
 .form-actions.wrap { flex-wrap: wrap; align-items: center; }
 .form-actions .spacer { flex: 1; }
 .lightbox {
