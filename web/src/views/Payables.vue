@@ -103,6 +103,10 @@ watch(() => edit.value && [edit.value.invoice_date, edit.value.payment_terms], (
   if (edit.value && !dueTouched) edit.value.pay_due_date = payDueDate(edit.value.invoice_date, edit.value.payment_terms)
 })
 
+// 交易條件用選的；舊資料若是其他寫法也保留顯示
+const TERMS = ['Net 90days', 'Net 60days', 'Net 30days']
+const termOptions = computed(() => [...new Set([...TERMS, edit.value?.payment_terms].filter(Boolean))])
+
 const preview = computed(() => (edit.value ? buildRow(edit.value) : []))
 
 const LABELS = { invoice_date: '發票日期', invoice_no: '發票號碼', amount: '金額', items: '料件' }
@@ -232,7 +236,12 @@ async function removeInvoice() {
         </label>
         <label>請購單號<input v-model="edit.pr_no" placeholder="V2026100005" /></label>
         <label>報價單編號<input v-model="edit.quote_no" /></label>
-        <label>交易條件<input v-model="edit.payment_terms" placeholder="Net 90days" /></label>
+        <label>交易條件
+          <select v-model="edit.payment_terms">
+            <option value="">請選擇</option>
+            <option v-for="t in termOptions" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </label>
         <label>預計付款日<input v-model="edit.pay_due_date" type="date" @input="dueTouched = true" />
           <small class="muted">依交易條件自動計算（發票月底 + 天數），可修改</small>
         </label>
