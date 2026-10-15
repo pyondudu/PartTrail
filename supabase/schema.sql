@@ -109,6 +109,29 @@ create table if not exists public.requesters (
   created_at  timestamptz not null default now()
 );
 
+-- 發票（應付帳款）：收貨後依廠商發票登打，一張發票可對應多筆料件
+create table if not exists public.invoices (
+  id            uuid primary key default gen_random_uuid(),
+  vendor        text not null,
+  quote_no      text,
+  invoice_date  date not null,
+  invoice_no    text not null,
+  amount        numeric not null,  -- 含稅，以發票為準
+  items_text    text,              -- 寫進試算表「品項」欄的文字
+  pr_no         text,              -- 請購單號
+  payment_terms text,              -- 交易條件，例：Net 90days
+  pay_method    text,              -- 付款方式，接在預計付款日後（例：匯款）
+  pay_due_date  date,              -- 預計付款日
+  sheet_row     int,               -- 已寫入 Google 試算表的列號
+  exported_at   timestamptz,
+  created_at    timestamptz not null default now()
+);
+
+-- 後加欄位：只新增可為空的欄位，既有資料不受影響
+alter table public.items   add column if not exists invoice_id uuid references public.invoices(id) on delete set null;
+alter table public.vendors add column if not exists payment_terms text;
+create index if not exists items_invoice_idx on public.items (invoice_id);
+
 -- ─────────────────────────────────────────────
 -- Triggers：交期歷史、狀態紀錄、updated_at
 -- ─────────────────────────────────────────────
@@ -164,6 +187,7 @@ alter table public.status_log       enable row level security;
 alter table public.attachments      enable row level security;
 alter table public.vendors          enable row level security;
 alter table public.requesters       enable row level security;
+alter table public.invoices         enable row level security;
 
 drop policy if exists "profiles self read" on public.profiles;
 create policy "profiles self read" on public.profiles
@@ -172,7 +196,7 @@ create policy "profiles self read" on public.profiles
 do $$
 declare t text;
 begin
-  foreach t in array array['items', 'due_date_history', 'status_log', 'attachments', 'vendors', 'requesters'] loop
+  foreach t in array array['items', 'due_date_history', 'status_log', 'attachments', 'vendors', 'requesters', 'invoices'] loop
     execute format('drop policy if exists "read for members" on public.%I', t);
     execute format('create policy "read for members" on public.%I for select using (public.my_role() in (''editor'', ''viewer''))', t);
     execute format('drop policy if exists "write for editors" on public.%I', t);

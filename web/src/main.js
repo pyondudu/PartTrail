@@ -4,6 +4,7 @@ import App from './App.vue'
 import Dashboard from './views/Dashboard.vue'
 import ItemDetail from './views/ItemDetail.vue'
 import ItemForm from './views/ItemForm.vue'
+import Payables from './views/Payables.vue'
 import './style.css'
 
 const router = createRouter({
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/item/new', component: ItemForm },
     { path: '/item/:id', component: ItemDetail, props: true },
     { path: '/item/:id/edit', component: ItemForm, props: true },
+    { path: '/payables', component: Payables },
   ],
   scrollBehavior: () => ({ top: 0 }),
 })

@@ -13,6 +13,7 @@ const item = computed(() => getItem(props.id))
 const history = ref([])
 const statusLog = ref([])
 const files = ref([])
+const invoice = ref(null)
 const toast = ref('')
 const uploading = ref(false)
 
@@ -30,11 +31,14 @@ window.addEventListener('keydown', onKey)
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 async function loadRelated() {
-  const [h, s, a] = await Promise.all([
+  const invoiceId = item.value?.invoice_id
+  const [h, s, a, inv] = await Promise.all([
     supabase.from('due_date_history').select('*').eq('item_id', props.id).order('changed_at', { ascending: false }),
     supabase.from('status_log').select('*').eq('item_id', props.id).order('changed_at', { ascending: true }),
     supabase.from('attachments').select('*').eq('item_id', props.id).order('uploaded_at', { ascending: false }),
+    invoiceId ? supabase.from('invoices').select('*').eq('id', invoiceId).maybeSingle() : { data: null },
   ])
+  invoice.value = inv.data
   history.value = h.data ?? []
   statusLog.value = s.data ?? []
   const paths = (a.data ?? []).map((f) => f.file_path)
@@ -138,6 +142,22 @@ async function removeItem() {
         <dt>下單日</dt><dd>{{ fmtDate(item.order_date) }}</dd>
         <dt>到貨日</dt><dd>{{ fmtDate(item.received_date) }}</dd>
         <dt>備註</dt><dd class="pre">{{ item.note || '—' }}</dd>
+      </dl>
+    </section>
+
+    <section v-if="invoice" class="card">
+      <div class="section-head">
+        <h3>發票</h3>
+        <router-link v-if="store.isEditor" to="/payables" class="btn ghost small">應付帳款</router-link>
+      </div>
+      <dl class="kv">
+        <dt>發票號碼</dt><dd>{{ invoice.invoice_no }}</dd>
+        <dt>發票日期</dt><dd>{{ fmtDate(invoice.invoice_date) }}</dd>
+        <dt>金額（含稅）</dt><dd>{{ fmtMoney(invoice.amount) }}</dd>
+        <dt>請購單號</dt><dd>{{ invoice.pr_no || '—' }}</dd>
+        <dt>交易條件</dt><dd>{{ invoice.payment_terms || '—' }}</dd>
+        <dt>預計付款日</dt><dd>{{ fmtDate(invoice.pay_due_date) }}</dd>
+        <dt>試算表</dt><dd>{{ invoice.sheet_row ? `已寫入第 ${invoice.sheet_row} 列` : '未寫入' }}</dd>
       </dl>
     </section>
 

@@ -47,6 +47,7 @@ async function logout() {
           <span>{{ SITE_NAME }}</span>
         </router-link>
         <div class="topbar-right">
+          <router-link v-if="store.isEditor" to="/payables" class="btn ghost small">應付帳款</router-link>
           <span class="role-tag" :class="store.role">{{ store.isEditor ? '編輯者' : '唯讀' }}</span>
           <button class="btn ghost small" @click="logout">登出</button>
         </div>
