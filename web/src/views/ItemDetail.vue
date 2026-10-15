@@ -33,9 +33,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 async function loadRelated() {
   const invoiceId = item.value?.invoice_id
   const [h, s, a, inv] = await Promise.all([
-    supabase.from('due_date_history').select('*').eq('item_id', props.id).order('changed_at', { ascending: false }),
+    supabase.from('due_date_history').select('*').eq('item_id', props.id).order('changed_at', { ascending: true }),
     supabase.from('status_log').select('*').eq('item_id', props.id).order('changed_at', { ascending: true }),
-    supabase.from('attachments').select('*').eq('item_id', props.id).order('uploaded_at', { ascending: false }),
+    supabase.from('attachments').select('*').eq('item_id', props.id).order('uploaded_at', { ascending: true }),
     invoiceId ? supabase.from('invoices').select('*').eq('id', invoiceId).maybeSingle() : { data: null },
   ])
   invoice.value = inv.data

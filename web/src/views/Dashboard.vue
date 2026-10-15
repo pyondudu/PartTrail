@@ -59,8 +59,8 @@ const list = computed(() => {
     .sort((a, b) => {
       const ua = URG_ORDER[urgency(a)], ub = URG_ORDER[urgency(b)]
       if (ua !== ub) return ua - ub
-      if (a.status === 'received') return (b.received_date || '').localeCompare(a.received_date || '')
-      return (a.due_date || '9999').localeCompare(b.due_date || '9999') || b.created_at.localeCompare(a.created_at)
+      if (a.status === 'received') return (a.received_date || '9999').localeCompare(b.received_date || '9999') || a.created_at.localeCompare(b.created_at)
+      return (a.due_date || '9999').localeCompare(b.due_date || '9999') || a.created_at.localeCompare(b.created_at)
     })
 })
 

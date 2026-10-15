@@ -14,7 +14,7 @@ const busy = ref(false)
 async function loadInvoices() {
   const { data, error } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false }).order('created_at', { ascending: false }).limit(100)
   if (error) err.value = '讀取發票失敗：' + error.message
-  invoices.value = data ?? []
+  invoices.value = (data ?? []).reverse() // 取最近 100 張，畫面與總表一致由舊到新
 }
 onMounted(async () => {
   await loadInvoices()
@@ -27,8 +27,9 @@ function flash(msg) {
   setTimeout(() => (toast.value = ''), 2500)
 }
 
-// 待登打：已收貨、尚未對應發票；依 廠商＋報價單號 分組
-const pendingItems = computed(() => store.items.filter((i) => i.status === 'received' && !i.invoice_id))
+// 待登打：已收貨、尚未對應發票；依 廠商＋報價單號 分組，與總表一致依到貨日由舊到新
+const byReceived = (a, b) => (a.received_date || '9999').localeCompare(b.received_date || '9999') || a.created_at.localeCompare(b.created_at)
+const pendingItems = computed(() => store.items.filter((i) => i.status === 'received' && !i.invoice_id).sort(byReceived))
 const groups = computed(() => {
   const map = new Map()
   for (const i of pendingItems.value) {
@@ -36,8 +37,7 @@ const groups = computed(() => {
     if (!map.has(key)) map.set(key, { key, vendor: i.vendor, quote_no: i.quote_no || '', items: [] })
     map.get(key).items.push(i)
   }
-  const latest = (g) => g.items.reduce((m, i) => ((i.received_date || '') > m ? i.received_date : m), '')
-  return [...map.values()].sort((a, b) => latest(b).localeCompare(latest(a)))
+  return [...map.values()] // pendingItems 已排序，各組依最早到貨日排列
 })
 
 // ── 發票編輯 ──
@@ -84,7 +84,7 @@ const candidateItems = computed(() => {
   if (!edit.value) return []
   const linked = store.items.filter((i) => edit.value.id && i.invoice_id === edit.value.id)
   const pending = pendingItems.value.filter((i) => i.vendor === edit.value.vendor)
-  return [...linked, ...pending]
+  return [...linked, ...pending].sort(byReceived)
 })
 const selectedItems = computed(() => candidateItems.value.filter((i) => edit.value.itemIds.has(i.id)))
 const quoteSum = computed(() => {
@@ -218,7 +218,7 @@ async function removeInvoice() {
 
       <div class="inv-items" :class="{ invalid: bad('items') }">
         <span class="muted">對應料件（同廠商待登打的可一起勾選）</span>
-        <label v-for="i in candidateItems" :key="i.id" class="check">
+        <label v-for="i in candidateItems" :key="i.id" class="check" :class="{ on: edit.itemIds.has(i.id) }">
           <input type="checkbox" :checked="edit.itemIds.has(i.id)" @change="toggleItem(i)" />
           <span>{{ i.part_name }} <span class="muted">· {{ i.qty }} {{ i.unit }} · {{ i.quote_no || '無報價單號' }} · {{ fmtDate(i.received_date) }} 到貨</span></span>
         </label>

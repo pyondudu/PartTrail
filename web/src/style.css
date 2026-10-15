@@ -233,8 +233,10 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .ok { color: var(--done); }
 .inv-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
 .inv-items.invalid { border-color: var(--overdue); background: var(--overdue-bg); }
-.check { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
-.check input { width: auto; margin-top: 4px; }
+.check { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; color: var(--text); font-size: 0.95rem; cursor: pointer; }
+.check:hover { background: var(--surface-2); }
+.check.on { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.check input { width: auto; flex-shrink: 0; margin: 0; }
 .preview-title { margin-top: 16px; }
 .sheet-preview { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; }
 .sheet-preview table { border-collapse: collapse; font-size: 0.8rem; min-width: 100%; }
