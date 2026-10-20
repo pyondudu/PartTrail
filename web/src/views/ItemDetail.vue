@@ -136,7 +136,7 @@ async function removeItem() {
         <dt>專案</dt><dd>{{ item.project || '—' }}</dd>
         <dt>廠商</dt><dd>{{ item.vendor }}</dd>
         <dt>需求人</dt><dd>{{ item.requester || '—' }}</dd>
-        <dt>規格</dt><dd class="pre">{{ item.spec || '—' }}</dd>
+        <template v-if="item.spec"><dt>規格</dt><dd class="pre">{{ item.spec }}</dd></template>
         <dt>報價單號</dt><dd>{{ item.quote_no || '—' }}</dd>
         <dt>報價金額（含稅）</dt><dd>{{ fmtMoney(item.quote_amount) }}</dd>
         <dt>報價日</dt><dd>{{ fmtDate(item.quote_date) }}</dd>

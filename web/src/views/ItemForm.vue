@@ -223,7 +223,7 @@ async function save() {
             <option :value="ADD_NEW">＋ 新增需求人…</option>
           </select>
         </label>
-        <label class="span2">規格 / 說明<textarea v-model="form.spec" rows="2" placeholder="細節可直接看報價單附檔" /></label>
+        <label v-if="original?.spec" class="span2">規格 / 說明（舊資料）<textarea v-model="form.spec" rows="2" /></label>
         <template v-if="!hasLines">
           <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
           <label>單位

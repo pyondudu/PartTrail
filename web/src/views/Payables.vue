@@ -224,7 +224,7 @@ async function removeInvoice() {
         <span class="muted">對應料件（同廠商待登打的可一起勾選）</span>
         <label v-for="i in candidateItems" :key="i.id" class="check" :class="{ on: edit.itemIds.has(i.id) }">
           <input type="checkbox" :checked="edit.itemIds.has(i.id)" @change="toggleItem(i)" />
-          <span>{{ i.part_name }} <span class="muted">· {{ i.qty }} {{ i.unit }} · {{ i.quote_no || '無報價單號' }} · {{ fmtDate(i.received_date) }} 到貨</span></span>
+          <span>{{ i.part_name }} <span class="muted">· {{ i.quote_lines?.length ? `${i.quote_lines.length} 項` : `${i.qty ?? ''} ${i.unit || ''}` }} · {{ i.quote_no || '無報價單號' }} · {{ fmtDate(i.received_date) }} 到貨</span></span>
         </label>
       </div>
 

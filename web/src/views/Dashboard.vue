@@ -132,7 +132,8 @@ function toggleQuick(k) {
         <td>{{ i.project || '—' }}</td>
         <td>
           <div class="name">{{ i.part_name }}</div>
-          <div v-if="i.spec" class="sub">{{ i.spec }}</div>
+          <div v-if="i.quote_lines?.length" class="sub">{{ i.quote_lines.map((l) => l.name).filter(Boolean).join('、') }}</div>
+          <div v-else-if="i.spec" class="sub">{{ i.spec }}</div>
         </td>
         <td>{{ i.vendor }}</td>
         <td>{{ i.requester || '—' }}</td>
