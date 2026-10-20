@@ -60,12 +60,29 @@ export function fmtMoney(n) {
   return Number(n).toLocaleString('zh-TW')
 }
 
+// 報價明細：單價為未稅，稅金 5% 四捨五入
+export const TAX_RATE = 0.05
+
+export function lineAmount(l) {
+  if (l.qty === null || l.qty === undefined || l.qty === '' || l.price === null || l.price === undefined || l.price === '') return null
+  return Math.round(Number(l.qty) * Number(l.price) * 100) / 100
+}
+
+export function quoteTotals(lines) {
+  const list = lines ?? []
+  const qty = list.reduce((s, l) => s + (Number(l.qty) || 0), 0)
+  const subtotal = list.reduce((s, l) => s + (lineAmount(l) ?? 0), 0)
+  const tax = Math.round(subtotal * TAX_RATE)
+  return { qty, subtotal, tax, total: subtotal + tax }
+}
+
 // 給被追問時貼到 LINE / Teams 的進度文字
 export function progressText(item) {
   const lines = [
     `【${item.part_name}】`,
     `廠商：${item.vendor}`,
     item.qty ? `數量：${item.qty} ${item.unit || ''}` : null,
+    ...(item.quote_lines ?? []).map((l) => `・${l.name} ${l.qty ?? ''} ${l.unit || ''}`.trim()),
     `狀態：${STATUS[item.status].label}`,
   ]
   if (item.status === 'ordered') lines.push(`預計交期：${fmtDate(item.due_date)}（${daysText(item)}）`)

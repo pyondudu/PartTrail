@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
-import { STATUS, STATUS_KEYS, todayStr } from '../lib/util'
+import { STATUS, STATUS_KEYS, todayStr, fmtMoney, lineAmount, quoteTotals } from '../lib/util'
 
 const props = defineProps({ id: String })
 const router = useRouter()
@@ -17,11 +17,13 @@ const EMPTY = {
   status: 'quoted', order_date: null, due_date: null,
   received_date: null, note: '',
 }
-const form = reactive({ ...EMPTY })
+const blankLine = (unit = 'pcs') => ({ name: '', qty: null, unit, price: null })
+const form = reactive({ ...EMPTY, quote_lines: [blankLine()] })
 const original = ref(null)
 const reason = ref('')
 const err = ref('')
 const busy = ref(false)
+const amountTouched = ref(false) // 報價金額手動改過就不再依明細覆蓋
 
 watchEffect(() => {
   if (isNew.value || original.value) return
@@ -29,7 +31,41 @@ watchEffect(() => {
   if (item) {
     original.value = item
     for (const k of Object.keys(EMPTY)) form[k] = item[k] ?? EMPTY[k]
+    form.quote_lines = item.quote_lines?.length ? JSON.parse(JSON.stringify(item.quote_lines)) : [blankLine()]
+    // 舊資料的報價金額與明細總計不同時，視為手動輸入，不自動覆蓋
+    amountTouched.value = item.quote_amount !== null && item.quote_amount !== quoteTotals(item.quote_lines).total
   }
+})
+
+// 報價明細（未稅單價）：有填明細時，數量、單位、報價金額（含稅）與空白品名自動帶入
+const filledLines = computed(() => form.quote_lines.filter((l) => String(l.name ?? '').trim() || l.qty || l.price))
+const hasLines = computed(() => filledLines.value.length > 0)
+const totals = computed(() => quoteTotals(filledLines.value))
+const autoName = computed(() => {
+  const list = filledLines.value
+  if (!list.length) return ''
+  const first = String(list[0].name ?? '').trim().split('\n')[0]
+  return list.length > 1 ? `${first} 等 ${list.length} 項` : first
+})
+const LINE_UNITS = ['pcs', 'set', 'EA', '支', '個', '組']
+
+function addLine() {
+  form.quote_lines.push(blankLine(form.quote_lines.at(-1)?.unit || 'pcs'))
+}
+function removeLine(i) {
+  form.quote_lines.splice(i, 1)
+  if (!form.quote_lines.length) form.quote_lines.push(blankLine())
+}
+
+watch(totals, (t) => {
+  if (!hasLines.value) return
+  form.qty = t.qty
+  const us = [...new Set(filledLines.value.map((l) => l.unit).filter(Boolean))]
+  form.unit = us.length === 1 ? us[0] : null
+  if (!amountTouched.value) form.quote_amount = t.total
+})
+watch(autoName, (v, prev) => {
+  if (v && (!form.part_name || form.part_name === prev)) form.part_name = v
 })
 
 const dueChanged = computed(() => original.value?.due_date && form.due_date !== original.value.due_date)
@@ -105,7 +141,8 @@ function isEmpty(v) {
 }
 
 const missing = computed(() => {
-  const keys = ['project', 'part_name', 'requester', 'qty', 'vendor']
+  const keys = ['project', 'part_name', 'requester', 'vendor']
+  if (!hasLines.value) keys.push('qty')
   if (form.status !== 'quoted') keys.push('due_date')
   if (form.status === 'received') keys.push('received_date')
   const list = keys.filter((k) => isEmpty(form[k]))
@@ -135,6 +172,9 @@ async function save() {
   const payload = { ...form }
   for (const k of Object.keys(payload)) if (payload[k] === '') payload[k] = null
   if (dueChanged.value) payload.due_change_reason = reason.value.trim()
+  payload.quote_lines = hasLines.value
+    ? filledLines.value.map((l) => ({ name: String(l.name ?? '').trim(), qty: l.qty ?? null, unit: l.unit || null, price: l.price ?? null }))
+    : null
 
   const q = isNew.value
     ? supabase.from('items').insert(payload).select().single()
@@ -184,14 +224,43 @@ async function save() {
           </select>
         </label>
         <label class="span2">規格 / 說明<textarea v-model="form.spec" rows="2" placeholder="細節可直接看報價單附檔" /></label>
-        <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
-        <label>單位
-          <select v-model="form.unit">
-            <option v-for="u in units" :key="u" :value="u">{{ u }}</option>
-            <option :value="ADD_NEW">＋ 其他…</option>
-          </select>
-        </label>
+        <template v-if="!hasLines">
+          <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
+          <label>單位
+            <select v-model="form.unit">
+              <option v-for="u in units" :key="u" :value="u">{{ u }}</option>
+              <option :value="ADD_NEW">＋ 其他…</option>
+            </select>
+          </label>
+        </template>
+        <p v-else class="span2 muted">數量依報價明細：共 {{ filledLines.length }} 項，數量合計 {{ totals.qty }} {{ form.unit || '' }}</p>
       </div>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>報價明細（單價未稅）</legend>
+      <p class="muted">依報價單逐列輸入；有填明細時，數量與報價金額（含稅）自動計算。</p>
+      <datalist id="line-units"><option v-for="u in LINE_UNITS" :key="u" :value="u" /></datalist>
+      <div class="qlines">
+        <div class="qline qline-head">
+          <span>品名規格</span><span>數量</span><span>單位</span><span>單價</span><span class="num">金額</span><span />
+        </div>
+        <div v-for="(l, i) in form.quote_lines" :key="i" class="qline">
+          <textarea v-model="l.name" rows="1" placeholder="品名規格" aria-label="品名規格" />
+          <input v-model.number="l.qty" type="number" min="0" step="any" inputmode="decimal" placeholder="數量" aria-label="數量" />
+          <input v-model="l.unit" list="line-units" placeholder="單位" aria-label="單位" />
+          <input v-model.number="l.price" type="number" min="0" step="any" inputmode="decimal" placeholder="單價" aria-label="單價" />
+          <span class="num amount">{{ fmtMoney(lineAmount(l)) }}</span>
+          <button type="button" class="btn link danger" aria-label="刪除此列" @click="removeLine(i)">✕</button>
+        </div>
+      </div>
+      <button type="button" class="btn ghost small" @click="addLine">＋ 新增一列</button>
+      <dl v-if="hasLines" class="qtotals">
+        <dt>數量合計</dt><dd>{{ totals.qty }}</dd>
+        <dt>合計</dt><dd>{{ fmtMoney(totals.subtotal) }}</dd>
+        <dt>稅金 5%</dt><dd>{{ fmtMoney(totals.tax) }}</dd>
+        <dt>總計</dt><dd><strong>{{ fmtMoney(totals.total) }}</strong></dd>
+      </dl>
     </fieldset>
 
     <fieldset class="card">
@@ -205,7 +274,11 @@ async function save() {
           </select>
         </label>
         <label>報價單號<input v-model="form.quote_no" placeholder="LINE 報價可留空" /></label>
-        <label>報價金額（含稅）<input v-model.number="form.quote_amount" type="number" min="0" step="any" inputmode="decimal" /></label>
+        <label>報價金額（含稅）<input v-model.number="form.quote_amount" type="number" min="0" step="any" inputmode="decimal" @input="amountTouched = true" />
+          <small v-if="hasLines && form.quote_amount !== totals.total" class="muted">
+            依明細 {{ fmtMoney(totals.total) }} <button type="button" class="btn link" @click="amountTouched = false; form.quote_amount = totals.total">套用</button>
+          </small>
+        </label>
         <label>報價日期<input v-model="form.quote_date" type="date" /></label>
       </div>
       <div class="section-head attach-head">

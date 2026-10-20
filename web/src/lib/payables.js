@@ -7,10 +7,13 @@ function ymd(s) {
 }
 const pad = (n) => String(n).padStart(2, '0')
 
-// 品項欄：每筆料件一行「品名 *數量單位」
+// 品項欄：每筆料件一行「品名 *數量單位」；有報價明細時改為明細逐列
+const lineText = (name, qty, unit) => (qty ? `${name} *${Number(qty)}${unit || ''}` : name)
 export function itemsText(items) {
   return items
-    .map((i) => (i.qty ? `${i.part_name} *${Number(i.qty)}${i.unit || ''}` : i.part_name))
+    .flatMap((i) => (i.quote_lines?.length
+      ? i.quote_lines.map((l) => lineText(l.name, l.qty, l.unit))
+      : [lineText(i.part_name, i.qty, i.unit)]))
     .join('\n')
 }
 

@@ -51,7 +51,7 @@ const list = computed(() => {
       if (requester.value && i.requester !== requester.value) return false
       if (quick.value && urgency(i) !== quick.value) return false
       if (kw) {
-        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.note].join(' ').toLowerCase()
+        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.note, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
         if (!hay.includes(kw)) return false
       }
       return true

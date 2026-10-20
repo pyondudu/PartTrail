@@ -128,6 +128,8 @@ create table if not exists public.invoices (
 );
 
 -- 後加欄位：只新增可為空的欄位，既有資料不受影響
+-- 報價明細：jsonb 陣列，每列 { name 品名規格, qty, unit, price 未稅單價 }
+alter table public.items   add column if not exists quote_lines jsonb;
 alter table public.items   add column if not exists invoice_id uuid references public.invoices(id) on delete set null;
 alter table public.vendors add column if not exists payment_terms text;
 create index if not exists items_invoice_idx on public.items (invoice_id);

@@ -141,4 +141,6 @@ npm run icons                   # 重新產生圖示 PNG
 ### 資料庫（一次性）
 已在用的資料庫：Supabase → SQL Editor 執行 `supabase/invoices_migration.sql`。只新增 `invoices` 表與 `items.invoice_id`、`vendors.payment_terms` 兩個可為空的欄位，不修改、不刪除既有資料，可重複執行。（新建的資料庫直接跑 `schema.sql` 即已包含。）
 
+報價明細（品名規格／數量／單價／金額）：已在用的資料庫在 SQL Editor 執行 `supabase/quote_lines_migration.sql`，只新增可為空的 `items.quote_lines` 欄位，可重複執行。
+
 欄位順序或標題若有調整，需同步修改 `web/src/lib/payables.js` 的 `buildRow`。

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
+import QuoteLines from '../components/QuoteLines.vue'
 import { STATUS, urgency, daysText, fmtDate, fmtDateTime, fmtMoney, progressText, todayStr } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -143,6 +144,11 @@ async function removeItem() {
         <dt>到貨日</dt><dd>{{ fmtDate(item.received_date) }}</dd>
         <dt>備註</dt><dd class="pre">{{ item.note || '—' }}</dd>
       </dl>
+    </section>
+
+    <section v-if="item.quote_lines?.length" class="card">
+      <h3>報價明細（單價未稅）</h3>
+      <QuoteLines :lines="item.quote_lines" />
     </section>
 
     <section v-if="invoice" class="card">

@@ -277,3 +277,42 @@ label.invalid { color: var(--overdue); font-weight: 600; }
 label.invalid > input, label.invalid > textarea, label.invalid > select { border-color: var(--overdue); background: var(--overdue-bg); }
 label.invalid::after { content: "此欄必填"; font-size: 0.75rem; font-weight: 400; }
 .items-table .name + .sub { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── 報價明細 ── */
+.qlines { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.qline { display: grid; grid-template-columns: minmax(0, 1fr) 80px 72px 100px 90px 32px; gap: 6px; align-items: center; }
+.qline textarea { resize: vertical; min-height: 38px; }
+.qline .amount { font-variant-numeric: tabular-nums; }
+.qline-head { font-size: 0.8rem; color: var(--muted); }
+.qline .num { text-align: right; }
+.qtotals { display: grid; grid-template-columns: auto auto; justify-content: end; gap: 4px 16px; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+.qtotals dt { color: var(--muted); }
+.qtotals dd { margin: 0; text-align: right; }
+
+.lines-wrap { overflow-x: auto; }
+.lines-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.lines-table th { text-align: left; font-size: 0.8rem; font-weight: 600; color: var(--muted); padding: 8px 10px; background: var(--surface-2); }
+.lines-table td { padding: 8px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+.lines-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.lines-table .sub { font-size: 0.75rem; color: var(--muted); }
+.lines-table tfoot td { border-top: 0; padding-top: 4px; padding-bottom: 4px; }
+.lines-table tfoot tr:first-child td { border-top: 1px solid var(--border); padding-top: 8px; }
+.lines-table tfoot .total td { font-weight: 700; }
+.lines-table.clickable { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.lines-table.clickable tbody tr { cursor: pointer; }
+.lines-table.clickable tbody tr:hover { background: var(--surface-2); }
+.nowrap { white-space: nowrap; }
+
+.quotes .page-head h2 { flex: 1; }
+.quotes .sheet { margin-bottom: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); color: var(--text); padding: 6px 14px; cursor: pointer; font: inherit; }
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+
+@media (max-width: 720px) {
+  .qline-head { display: none; }
+  .qline { grid-template-columns: 1fr 1fr 1fr 32px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
+  .qline textarea { grid-column: 1 / -1; }
+  .qline .amount { grid-column: 1 / 4; }
+  .qline button { grid-column: 4; grid-row: 2; }
+}
