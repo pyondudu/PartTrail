@@ -35,14 +35,19 @@ async function setSession(session) {
     .subscribe()
 }
 
+// 有報價明細的料件以整張報價單為一筆，一律顯示 1 set（舊資料存的是數量合計）
+function normalize(row) {
+  return row.quote_lines?.length ? { ...row, qty: 1, unit: 'set' } : row
+}
+
 function onChange({ eventType, new: row, old }) {
   if (eventType === 'DELETE') {
     store.items = store.items.filter((i) => i.id !== old.id)
     return
   }
   const idx = store.items.findIndex((i) => i.id === row.id)
-  if (idx >= 0) store.items[idx] = row
-  else store.items.push(row)
+  if (idx >= 0) store.items[idx] = normalize(row)
+  else store.items.push(normalize(row))
 }
 
 export async function loadItems() {
@@ -50,7 +55,7 @@ export async function loadItems() {
   const { data, error } = await supabase.from('items').select('*').order('due_date', { ascending: true, nullsFirst: false })
   store.loading = false
   if (error) throw error
-  store.items = data
+  store.items = data.map(normalize)
 }
 
 export function getItem(id) {
