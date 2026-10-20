@@ -59,9 +59,9 @@ function removeLine(i) {
 
 watch(totals, (t) => {
   if (!hasLines.value) return
-  form.qty = t.qty
-  const us = [...new Set(filledLines.value.map((l) => l.unit).filter(Boolean))]
-  form.unit = us.length === 1 ? us[0] : null
+  // 總表以整張報價單為一筆：1 set，細項點進去看報價明細
+  form.qty = 1
+  form.unit = 'set'
   if (!amountTouched.value) form.quote_amount = t.total
 })
 watch(autoName, (v, prev) => {
@@ -233,7 +233,7 @@ async function save() {
             </select>
           </label>
         </template>
-        <p v-else class="span2 muted">數量依報價明細：共 {{ filledLines.length }} 項，數量合計 {{ totals.qty }} {{ form.unit || '' }}</p>
+        <p v-else class="span2 muted">數量：1 set（共 {{ filledLines.length }} 項，細項見報價明細）</p>
       </div>
     </fieldset>
 
