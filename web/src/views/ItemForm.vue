@@ -95,6 +95,21 @@ function nameList(table, field, label) {
 const vendors = nameList('vendors', 'vendor', '廠商')
 const requesters = nameList('requesters', 'requester', '需求人')
 
+// 專案：列出進行中（未收貨）料件的專案；新專案當場輸入，存檔後自然出現在清單
+const extraProjects = ref([])
+const projects = computed(() => {
+  const active = store.items.filter((i) => i.status !== 'received').map((i) => i.project)
+  return [...new Set([...active, ...extraProjects.value, form.project].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+})
+watch(() => form.project, (v, prev) => {
+  if (v !== ADD_NEW) return
+  form.project = prev
+  const name = window.prompt('新增專案名稱：')?.trim()
+  if (!name) return
+  if (!projects.value.includes(name)) extraProjects.value.push(name)
+  form.project = name
+})
+
 // 單位：常用的直接選，其他可當場輸入；編輯舊資料時不在清單上的值也保留顯示
 const UNITS = ['pcs', 'set']
 const extraUnits = ref([])
@@ -214,7 +229,13 @@ async function save() {
     <fieldset class="card">
       <legend>料件資訊</legend>
       <div class="grid">
-        <label class="span2" :class="{ invalid: bad('project') }">專案 *<input v-model="form.project" /></label>
+        <label class="span2" :class="{ invalid: bad('project') }">專案 *
+          <select v-model="form.project">
+            <option value="" disabled>請選擇專案</option>
+            <option v-for="p in projects" :key="p" :value="p">{{ p }}</option>
+            <option :value="ADD_NEW">＋ 新增專案…</option>
+          </select>
+        </label>
         <label class="span2" :class="{ invalid: bad('part_name') }">品名 *<input v-model="form.part_name" /></label>
         <label class="span2" :class="{ invalid: bad('requester') }">需求人 *
           <select v-model="form.requester">
