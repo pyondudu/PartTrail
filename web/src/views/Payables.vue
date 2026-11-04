@@ -12,9 +12,10 @@ const err = ref('')
 const busy = ref(false)
 
 async function loadInvoices() {
-  const { data, error } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false }).order('created_at', { ascending: false }).limit(100)
+  // 已登打發票：日期近的在上面（使用者指定的例外）
+  const { data, error } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false }).order('created_at', { ascending: false })
   if (error) err.value = '讀取發票失敗：' + error.message
-  invoices.value = (data ?? []).reverse() // 取最近 100 張，畫面與總表一致由舊到新
+  invoices.value = data ?? []
 }
 onMounted(async () => {
   await loadInvoices()
@@ -165,15 +166,25 @@ async function save() {
 }
 
 // 已貼上：用 exported_at 記錄，避免漏貼或重複貼
-async function setPasted(invs, pasted) {
+async function setPasted(invs, pasted, { clearChecked = false } = {}) {
   const ids = invs.map((v) => v.id).filter(Boolean)
-  if (!ids.length) return
+  if (!ids.length) return false
   const { error } = await supabase.from('invoices').update({ exported_at: pasted ? new Date().toISOString() : null }).in('id', ids)
-  if (error) return alert(error.message)
+  if (error) { alert(error.message); return false }
   await loadInvoices()
   if (edit.value?.id && ids.includes(edit.value.id)) edit.value.exported_at = pasted ? new Date().toISOString() : null
-  checked.value = new Set()
+  if (clearChecked) checked.value = new Set()
   flash(pasted ? `已標記 ${ids.length} 張為已貼上` : '已取消標記')
+  return true
+}
+
+// 新發票：先儲存再標記已貼上，完成後關閉表單
+async function savePasted() {
+  busy.value = true
+  const inv = await saveInvoice()
+  const ok = inv && (await setPasted([inv], true))
+  busy.value = false
+  if (ok) { flash('發票已儲存並標記已貼上'); edit.value = null }
 }
 
 async function copy(invs) {
@@ -193,8 +204,17 @@ function toggleChecked(id) {
   checked.value = s
 }
 function checkUnpasted() {
-  checked.value = new Set(invoices.value.filter((v) => !v.exported_at).map((v) => v.id))
+  checked.value = new Set(shownInvoices.value.filter((v) => !v.exported_at).map((v) => v.id))
 }
+
+// 已登打清單篩選：月份（發票日期）、廠商
+const filterMonth = ref('')
+const filterVendor = ref('')
+const monthOptions = computed(() => [...new Set(invoices.value.map((v) => v.invoice_date?.slice(0, 7)).filter(Boolean))].sort().reverse())
+const vendorOptions = computed(() => [...new Set(invoices.value.map((v) => v.vendor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
+const shownInvoices = computed(() => invoices.value.filter((v) =>
+  (!filterMonth.value || v.invoice_date?.startsWith(filterMonth.value)) && (!filterVendor.value || v.vendor === filterVendor.value)))
+const fmtMonth = (m) => `${m.slice(0, 4)} 年 ${Number(m.slice(5, 7))} 月`
 
 async function removeInvoice() {
   if (!confirm(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已貼到試算表的那列請自行刪除。`)) return
@@ -262,7 +282,8 @@ async function removeInvoice() {
       <div class="form-actions wrap">
         <button v-if="edit.id" class="btn link danger" :disabled="busy" @click="removeInvoice">刪除發票</button>
         <span class="spacer" />
-        <button v-if="edit.id" class="btn ghost" :disabled="busy" @click="setPasted([edit], !edit.exported_at)">{{ edit.exported_at ? '取消已貼上' : '✓ 標記已貼上' }}</button>
+        <button v-if="!edit.id" class="btn ghost" :disabled="busy" @click="savePasted">✓ 儲存並標記已貼上</button>
+        <button v-else class="btn ghost" :disabled="busy" @click="setPasted([edit], !edit.exported_at)">{{ edit.exported_at ? '取消已貼上' : '✓ 標記已貼上' }}</button>
         <button class="btn ghost" :disabled="busy" @click="copy([edit])">📋 複製這列</button>
         <button class="btn primary" :disabled="busy" @click="save">{{ busy ? '儲存中…' : '儲存' }}</button>
       </div>
@@ -285,23 +306,36 @@ async function removeInvoice() {
     <section class="card">
       <div class="section-head">
         <h3>已登打發票</h3>
-        <button v-if="invoices.some((v) => !v.exported_at)" class="btn link" @click="checkUnpasted">勾選全部未貼上</button>
+        <button v-if="shownInvoices.some((v) => !v.exported_at)" class="btn link" @click="checkUnpasted">勾選全部未貼上</button>
+      </div>
+      <div v-if="invoices.length" class="inv-filters">
+        <select v-model="filterMonth">
+          <option value="">全部月份</option>
+          <option v-for="m in monthOptions" :key="m" :value="m">{{ fmtMonth(m) }}</option>
+        </select>
+        <select v-model="filterVendor">
+          <option value="">全部廠商</option>
+          <option v-for="v in vendorOptions" :key="v" :value="v">{{ v }}</option>
+        </select>
+        <span class="muted small">{{ shownInvoices.length }} 張</span>
+        <button v-if="filterMonth || filterVendor" class="btn link" @click="filterMonth = ''; filterVendor = ''">清除篩選</button>
       </div>
       <div v-if="checked.size" class="batch-bar">
         <span>已勾選 {{ checked.size }} 張</span>
         <button class="btn small primary" @click="copy(checkedList)">📋 複製 {{ checked.size }} 列</button>
-        <button class="btn small ghost" @click="setPasted(checkedList, true)">✓ 標記已貼上</button>
+        <button class="btn small ghost" @click="setPasted(checkedList, true, { clearChecked: true })">✓ 標記已貼上</button>
         <button class="btn link" @click="checked = new Set()">清除</button>
       </div>
       <p v-if="!invoices.length" class="muted">尚無發票</p>
+      <p v-else-if="!shownInvoices.length" class="muted">沒有符合篩選的發票</p>
       <ul class="inv-list">
-        <li v-for="inv in invoices" :key="inv.id">
+        <li v-for="inv in shownInvoices" :key="inv.id">
           <input type="checkbox" class="inv-check" :checked="checked.has(inv.id)" @change="toggleChecked(inv.id)" />
           <div class="inv-main">
             <strong>{{ inv.vendor }}</strong> <span class="muted">{{ inv.invoice_no }} · {{ fmtDate(inv.invoice_date) }}</span>
             <div class="muted small">
               NT${{ fmtMoney(inv.amount) }} · 預計付款 {{ fmtDate(inv.pay_due_date) }} ·
-              <span :class="inv.exported_at ? 'pasted' : 'warn'">{{ inv.exported_at ? '已貼上' : '未貼上' }}</span>
+              <button type="button" class="paste-toggle" :class="inv.exported_at ? 'pasted' : 'warn'" :title="inv.exported_at ? '點一下取消已貼上' : '點一下標記已貼上'" @click="setPasted([inv], !inv.exported_at)">{{ inv.exported_at ? '已貼上' : '未貼上' }}</button>
             </div>
           </div>
           <div class="head-actions">
