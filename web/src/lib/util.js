@@ -76,6 +76,14 @@ export function quoteTotals(lines) {
   return { qty, subtotal, tax, total: subtotal + tax }
 }
 
+// 總表品名下方的灰色小字：報價明細第一列的品名（只取第一行），多項時註明共幾項
+export function firstLineText(item) {
+  const lines = (item.quote_lines ?? []).filter((l) => String(l.name ?? '').trim())
+  if (!lines.length) return ''
+  const first = String(lines[0].name).trim().split('\n')[0]
+  return lines.length > 1 ? `${first}（共 ${lines.length} 項）` : first
+}
+
 // 給被追問時貼到 LINE / Teams 的進度文字
 export function progressText(item) {
   const lines = [

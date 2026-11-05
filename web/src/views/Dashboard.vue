@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { store } from '../lib/store'
-import { STATUS, STATUS_KEYS, urgency, daysText, fmtDate, todayStr } from '../lib/util'
+import { STATUS, STATUS_KEYS, urgency, daysText, fmtDate, todayStr, firstLineText } from '../lib/util'
 
 const FILTER_KEY = 'parttrail.filters'
 function loadFilters() {
@@ -132,7 +132,8 @@ function toggleQuick(k) {
         <td>{{ i.project || '—' }}</td>
         <td>
           <div class="name">{{ i.part_name }}</div>
-          <div v-if="i.spec" class="sub">{{ i.spec }}</div>
+          <div v-if="firstLineText(i)" class="sub line1">{{ firstLineText(i) }}</div>
+          <div v-else-if="i.spec" class="sub">{{ i.spec }}</div>
         </td>
         <td>{{ i.vendor }}</td>
         <td>{{ i.requester || '—' }}</td>
@@ -148,6 +149,7 @@ function toggleQuick(k) {
         <span class="name">{{ i.part_name }}</span>
         <span class="pill" :class="i.status">{{ STATUS[i.status].label }}</span>
       </div>
+      <div v-if="firstLineText(i)" class="line1">{{ firstLineText(i) }}</div>
       <div class="row2">
         <span v-if="i.project">{{ i.project }} · </span>
         <span>{{ i.vendor }}</span>

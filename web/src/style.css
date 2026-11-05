@@ -176,6 +176,8 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .item-card.u-soon { border-left-color: var(--soon); }
 .item-card .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .item-card .name { font-weight: 600; }
+.item-card .line1 { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.line1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
 .item-card .row2 { font-size: 0.85rem; color: var(--muted); margin: 2px 0 6px; }
 .item-card .row3 { display: flex; justify-content: space-between; font-size: 0.9rem; }
 
