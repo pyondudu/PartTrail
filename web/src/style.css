@@ -310,10 +310,6 @@ label.invalid::after { content: "此欄必填"; font-size: 0.75rem; font-weight:
 .nowrap { white-space: nowrap; }
 
 .quotes .page-head h2 { flex: 1; }
-.quotes .sheet { margin-bottom: 12px; }
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: var(--surface); color: var(--text); padding: 6px 14px; cursor: pointer; font: inherit; }
-.seg button.on { background: var(--accent); color: var(--accent-ink); }
 
 @media (max-width: 720px) {
   .qline-head { display: none; }

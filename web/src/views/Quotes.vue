@@ -1,46 +1,35 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { store } from '../lib/store'
-import { fmtDate, fmtMoney, lineAmount } from '../lib/util'
-import QuoteLines from '../components/QuoteLines.vue'
+import { fmtDate, fmtMoney } from '../lib/util'
 
 const q = ref('')
 const vendor = ref('')
-const mode = ref('line') // line 單項 | sheet 整張
+const project = ref('')
 
 const vendors = computed(() => [...new Set(store.items.map((i) => i.vendor).filter(Boolean))].sort())
+const projects = computed(() => [...new Set(store.items.map((i) => i.project).filter(Boolean))].sort())
 
 // 依報價日由舊到新（同日依建立時間）
 const items = computed(() =>
   [...store.items].sort((a, b) =>
     (a.quote_date || '9999').localeCompare(b.quote_date || '9999') || a.created_at.localeCompare(b.created_at)))
 
-// 每列明細攤平成一列；沒有明細的舊料件以品名＋報價金額（含稅）帶入一列
+const kw = computed(() => q.value.trim().toLowerCase())
+
+// 一張報價單（一筆料件）一列；搜尋含明細品名，命中的明細另外列出
 const rows = computed(() =>
   items.value.flatMap((i) => {
-    const lines = i.quote_lines?.length
-      ? i.quote_lines.map((l) => ({ name: l.name, qty: l.qty, unit: l.unit, price: l.price, amount: lineAmount(l), legacy: false }))
-      : [{ name: i.part_name, qty: i.qty, unit: i.unit, price: null, amount: i.quote_amount, legacy: true }]
-    return lines.map((l, n) => ({ ...l, key: `${i.id}-${n}`, item: i }))
-  }))
-
-const filtered = computed(() => {
-  const kw = q.value.trim().toLowerCase()
-  return rows.value.filter((r) => {
-    if (vendor.value && r.item.vendor !== vendor.value) return false
-    if (kw) {
-      const hay = [r.name, r.item.part_name, r.item.vendor, r.item.quote_no, r.item.project].join(' ').toLowerCase()
-      if (!hay.includes(kw)) return false
+    if (vendor.value && i.vendor !== vendor.value) return []
+    if (project.value && i.project !== project.value) return []
+    const lines = i.quote_lines ?? []
+    const hits = kw.value ? lines.filter((l) => String(l.name ?? '').toLowerCase().includes(kw.value)) : []
+    if (kw.value) {
+      const hay = [i.part_name, i.spec, i.vendor, i.quote_no, i.project].join(' ').toLowerCase()
+      if (!hits.length && !hay.includes(kw.value)) return []
     }
-    return true
-  })
-})
-
-// 整張：有任一列符合就列出整張報價單
-const sheets = computed(() => {
-  const ids = new Set(filtered.value.map((r) => r.item.id))
-  return items.value.filter((i) => ids.has(i.id))
-})
+    return [{ item: i, count: lines.length, hits }]
+  }))
 </script>
 
 <template>
@@ -56,52 +45,37 @@ const sheets = computed(() => {
         <option value="">所有廠商</option>
         <option v-for="v in vendors" :key="v">{{ v }}</option>
       </select>
-      <div class="seg">
-        <button type="button" :class="{ on: mode === 'line' }" @click="mode = 'line'">單項</button>
-        <button type="button" :class="{ on: mode === 'sheet' }" @click="mode = 'sheet'">整張</button>
-      </div>
+      <select v-model="project">
+        <option value="">所有專案</option>
+        <option v-for="p in projects" :key="p">{{ p }}</option>
+      </select>
     </section>
 
     <p v-if="store.loading" class="muted center">載入中…</p>
-    <p v-else-if="!filtered.length" class="muted center empty">沒有符合條件的報價</p>
+    <p v-else-if="!rows.length" class="muted center empty">沒有符合條件的報價</p>
 
-    <div v-else-if="mode === 'line'" class="lines-wrap">
+    <div v-else class="lines-wrap">
       <table class="lines-table clickable">
         <thead>
           <tr>
-            <th>報價日</th><th>廠商</th><th>報價單號</th><th>品名規格</th>
-            <th class="num">數量</th><th class="num">單價</th><th class="num">金額</th>
+            <th>報價日</th><th>廠商</th><th>專案</th><th>報價單號</th><th>品名</th>
+            <th class="num">金額（含稅）</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in filtered" :key="r.key" @click="$router.push('/item/' + r.item.id)">
+          <tr v-for="r in rows" :key="r.item.id" @click="$router.push('/item/' + r.item.id)">
             <td class="nowrap">{{ fmtDate(r.item.quote_date) }}</td>
             <td>{{ r.item.vendor }}</td>
+            <td>{{ r.item.project || '—' }}</td>
             <td>{{ r.item.quote_no || '—' }}</td>
-            <td class="pre">{{ r.name || '—' }}</td>
-            <td class="num nowrap">{{ r.qty ?? '—' }} {{ r.unit || '' }}</td>
-            <td class="num">{{ fmtMoney(r.price) }}</td>
-            <td class="num nowrap">{{ fmtMoney(r.amount) }}<div v-if="r.legacy && r.amount != null" class="sub">含稅總額</div></td>
+            <td>
+              {{ r.item.part_name || '—' }}<span v-if="r.count" class="muted"> · {{ r.count }} 項</span>
+              <div v-for="(l, n) in r.hits" :key="n" class="sub pre">・{{ l.name }} {{ l.qty ?? '' }} {{ l.unit || '' }}</div>
+            </td>
+            <td class="num nowrap">{{ fmtMoney(r.item.quote_amount) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <template v-else>
-      <section v-for="i in sheets" :key="i.id" class="card sheet">
-        <div class="section-head">
-          <div>
-            <strong>{{ i.vendor }}</strong>
-            <span class="muted"> · {{ i.quote_no || '無報價單號' }} · {{ fmtDate(i.quote_date) }}</span>
-            <div class="muted small">{{ i.project || '—' }} · {{ i.part_name }}</div>
-          </div>
-          <router-link :to="'/item/' + i.id" class="btn ghost small">料件</router-link>
-        </div>
-        <QuoteLines v-if="i.quote_lines?.length" :lines="i.quote_lines" />
-        <p v-else class="muted">
-          無明細 · {{ i.qty ?? '—' }} {{ i.unit || '' }} · 報價金額（含稅）{{ fmtMoney(i.quote_amount) }}
-        </p>
-      </section>
-    </template>
   </div>
 </template>
