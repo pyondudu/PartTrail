@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { fmtDate, fmtMoney, todayStr } from '../lib/util'
-import { COLUMNS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
+import { COLUMNS, TERMS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
 
 const invoices = ref([])
 const vendorTerms = ref({})
@@ -105,7 +105,6 @@ watch(() => edit.value && [edit.value.invoice_date, edit.value.payment_terms], (
 })
 
 // 交易條件用選的；舊資料若是其他寫法也保留顯示
-const TERMS = ['Net 90days', 'Net 60days', 'Net 30days']
 const termOptions = computed(() => [...new Set([...TERMS, edit.value?.payment_terms].filter(Boolean))])
 
 const preview = computed(() => (edit.value ? buildRow(edit.value) : []))

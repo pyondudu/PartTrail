@@ -21,6 +21,9 @@ export function itemsText(items) {
     .join('\n')
 }
 
+// 交易條件用選的（廠商與發票共用）
+export const TERMS = ['Net 90days', 'Net 60days', 'Net 30days']
+
 // 交易條件「Net 90days」→ 發票月底起算 90 天（例：10/14 → 10/31 + 90 = 隔年 1/29）
 export function payDueDate(invoiceDate, terms) {
   const n = Number(String(terms || '').match(/\d+/)?.[0])
