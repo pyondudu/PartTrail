@@ -19,6 +19,8 @@ const EMPTY = {
 }
 const blankLine = (unit = 'pcs') => ({ name: '', qty: null, unit, price: null })
 const form = reactive({ ...EMPTY, quote_lines: [blankLine()] })
+// 新增時通常報價單一到就已下單：預設「已下單」、下單日帶今天，只有報價時再點回「已報價」
+if (isNew.value) setStatus('ordered')
 const original = ref(null)
 const reason = ref('')
 const err = ref('')
@@ -140,6 +142,7 @@ onBeforeUnmount(() => pending.value.forEach((p) => p.url && URL.revokeObjectURL(
 
 function setStatus(k) {
   form.status = k
+  if (k === 'quoted' && isNew.value) form.order_date = null
   if (k === 'ordered' && !form.order_date) form.order_date = todayStr()
   if (k === 'received' && !form.received_date) form.received_date = todayStr()
 }
