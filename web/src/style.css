@@ -186,8 +186,6 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .grid .span2 { grid-column: span 2; }
 .warn { color: var(--soon); }
-.new-vendor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
-.new-vendor-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
 .status-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .step { display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
 .step small { color: var(--muted); font-size: 0.75rem; }
@@ -277,7 +275,6 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
   .toolbar .btn.primary { flex: 1 1 100%; }
   .grid { grid-template-columns: 1fr; }
   .grid .span2 { grid-column: auto; }
-  .new-vendor { grid-template-columns: 1fr; }
   .status-steps { grid-template-columns: 1fr; }
 }
 

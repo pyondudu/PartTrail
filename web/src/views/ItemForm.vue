@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
-import { TERMS } from '../lib/payables'
 import { STATUS, STATUS_KEYS, todayStr, fmtMoney, lineAmount, quoteTotals } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -73,48 +72,30 @@ watch(autoName, (v, prev) => {
 
 const dueChanged = computed(() => original.value?.due_date && form.due_date !== original.value.due_date)
 
-// 下拉選單：名單來自 Supabase 表（不寫進公開程式碼）；選「＋ 新增…」可當場加入。
-// 編輯舊資料時，不在名單上的值也保留顯示。onAddNew 有給時改用表單內的區塊輸入，不跳 prompt
+// 下拉選單：名單來自 Supabase 表（不寫進公開程式碼）；需求人選「＋ 新增…」可當場加入，廠商到設定頁新增。
+// 編輯舊資料時，不在名單上的值也保留顯示
 const ADD_NEW = '__add__'
-function nameList(table, field, label, onAddNew) {
+function nameList(table, field, label) {
   const list = ref([])
   onMounted(async () => {
     const { data, error } = await supabase.from(table).select('name')
     if (error) err.value = `讀取${label}清單失敗：` + error.message
     list.value = (data ?? []).map((r) => r.name)
   })
-  async function add(name, extra = {}) {
-    const { error } = await supabase.from(table).insert({ name, ...extra })
-    if (error && error.code !== '23505') { alert(`新增${label}失敗：` + error.message); return false }
-    // 名稱已存在：有附帶欄位（如交易條件）就更新上去
-    if (error && Object.keys(extra).length) await supabase.from(table).update(extra).eq('name', name)
-    if (!list.value.includes(name)) list.value.push(name)
-    form[field] = name
-    return true
-  }
   watch(() => form[field], async (v, prev) => {
     if (v !== ADD_NEW) return
     form[field] = prev
-    if (onAddNew) return onAddNew()
     const name = window.prompt(`新增${label}名稱：`)?.trim()
-    if (name) await add(name)
+    if (!name) return
+    const { error } = await supabase.from(table).insert({ name })
+    if (error && error.code !== '23505') return alert(`新增${label}失敗：` + error.message)
+    if (!list.value.includes(name)) list.value.push(name)
+    form[field] = name
   })
-  const options = computed(() => [...new Set([...list.value, form[field]].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
-  return { options, add }
+  return computed(() => [...new Set([...list.value, form[field]].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
 }
-
-// 新增廠商：名稱＋交易條件一起建立，之後登打發票會自動帶入
-const newVendor = ref(null)
-const { options: vendors, add: addVendor } = nameList('vendors', 'vendor', '廠商', () => {
-  newVendor.value = { name: '', terms: '' }
-})
-const { options: requesters } = nameList('requesters', 'requester', '需求人')
-async function createVendor() {
-  const name = newVendor.value.name.trim()
-  if (!name) return alert('請輸入廠商名稱')
-  const terms = newVendor.value.terms
-  if (await addVendor(name, terms ? { payment_terms: terms } : {})) newVendor.value = null
-}
+const vendors = nameList('vendors', 'vendor', '廠商')
+const requesters = nameList('requesters', 'requester', '需求人')
 
 // 專案：列出進行中（未收貨）料件的專案；新專案當場輸入，存檔後自然出現在清單
 const extraProjects = ref([])
@@ -313,22 +294,9 @@ async function save() {
           <select v-model="form.vendor">
             <option value="" disabled>請選擇廠商</option>
             <option v-for="v in vendors" :key="v" :value="v">{{ v }}</option>
-            <option :value="ADD_NEW">＋ 新增廠商…</option>
           </select>
+          <small class="muted">新增廠商或改交易條件請到「<router-link to="/settings">設定</router-link>」</small>
         </label>
-        <div v-if="newVendor" class="span2 new-vendor">
-          <label>新廠商名稱<input v-model="newVendor.name" @keydown.enter.prevent="createVendor" /></label>
-          <label>交易條件
-            <select v-model="newVendor.terms">
-              <option value="">之後再選</option>
-              <option v-for="t in TERMS" :key="t" :value="t">{{ t }}</option>
-            </select>
-          </label>
-          <div class="new-vendor-actions">
-            <button type="button" class="btn ghost small" @click="newVendor = null">取消</button>
-            <button type="button" class="btn primary small" @click="createVendor">建立廠商</button>
-          </div>
-        </div>
         <label>報價單號<input v-model="form.quote_no" placeholder="LINE 報價可留空" /></label>
         <label>報價金額（含稅）<input v-model.number="form.quote_amount" type="number" min="0" step="any" inputmode="decimal" @input="amountTouched = true" />
           <small v-if="hasLines && form.quote_amount !== totals.total" class="muted">

@@ -6,6 +6,7 @@ import ItemDetail from './views/ItemDetail.vue'
 import ItemForm from './views/ItemForm.vue'
 import Payables from './views/Payables.vue'
 import Quotes from './views/Quotes.vue'
+import Settings from './views/Settings.vue'
 import './style.css'
 
 const router = createRouter({
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/item/:id/edit', component: ItemForm, props: true },
     { path: '/payables', component: Payables },
     { path: '/quotes', component: Quotes },
+    { path: '/settings', component: Settings },
   ],
   scrollBehavior: (to, from, saved) => saved || { top: 0 },
 })
