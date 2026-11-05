@@ -119,7 +119,7 @@ function toggleQuick(k) {
   <table v-if="list.length" class="items-table">
     <thead>
       <tr>
-        <th>交期</th><th>狀態</th><th>專案</th><th>品名</th><th>廠商</th><th>需求人</th><th class="num">數量</th>
+        <th>交期</th><th>狀態</th><th>專案</th><th>廠商</th><th>品名</th><th>需求人</th><th class="num">數量</th>
       </tr>
     </thead>
     <tbody>
@@ -130,12 +130,12 @@ function toggleQuick(k) {
         </td>
         <td><span class="pill" :class="i.status">{{ STATUS[i.status].label }}</span></td>
         <td>{{ i.project || '—' }}</td>
+        <td>{{ i.vendor }}</td>
         <td>
           <div class="name">{{ i.part_name }}</div>
           <div v-if="firstLineText(i)" class="sub line1">{{ firstLineText(i) }}</div>
           <div v-else-if="i.spec" class="sub">{{ i.spec }}</div>
         </td>
-        <td>{{ i.vendor }}</td>
         <td>{{ i.requester || '—' }}</td>
         <td class="num">{{ i.qty ?? '—' }} <span class="sub">{{ i.unit }}</span></td>
       </tr>
