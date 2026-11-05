@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { fmtDate, fmtMoney, todayStr } from '../lib/util'
-import { COLUMNS, TERMS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
+import { COLUMNS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
 
 const invoices = ref([])
 const vendorTerms = ref({})
@@ -47,8 +47,16 @@ const showErrors = ref(false)
 let textTouched = false
 let dueTouched = false
 
+// 交易條件一律以設定頁的廠商設定為準
 function defaultTerms(vendor) {
-  return vendorTerms.value[vendor] || invoices.value.find((v) => v.vendor === vendor && v.payment_terms)?.payment_terms || ''
+  return vendorTerms.value[vendor] || ''
+}
+// 編輯舊發票時，若與目前設定不同，提示可套用設定
+const settingTerms = computed(() => (edit.value ? defaultTerms(edit.value.vendor) : ''))
+function applySettingTerms() {
+  edit.value.payment_terms = settingTerms.value
+  edit.value.pay_due_date = payDueDate(edit.value.invoice_date, settingTerms.value)
+  dueTouched = false
 }
 
 async function openEditor(data) {
@@ -104,17 +112,15 @@ watch(() => edit.value && [edit.value.invoice_date, edit.value.payment_terms], (
   if (edit.value && !dueTouched) edit.value.pay_due_date = payDueDate(edit.value.invoice_date, edit.value.payment_terms)
 })
 
-// 交易條件用選的；舊資料若是其他寫法也保留顯示
-const termOptions = computed(() => [...new Set([...TERMS, edit.value?.payment_terms].filter(Boolean))])
-
 const preview = computed(() => (edit.value ? buildRow(edit.value) : []))
 
-const LABELS = { invoice_date: '發票日期', invoice_no: '發票號碼', amount: '金額', items: '料件' }
+const LABELS = { invoice_date: '發票日期', invoice_no: '發票號碼', amount: '金額', items: '料件', payment_terms: '交易條件（請到設定頁設定）' }
 const missing = computed(() => {
   if (!edit.value) return []
   const e = edit.value
   const list = ['invoice_date', 'invoice_no', 'amount'].filter((k) => e[k] === null || e[k] === undefined || String(e[k]).trim() === '')
   if (!e.itemIds.size) list.push('items')
+  if (!e.payment_terms) list.push('payment_terms')
   return list
 })
 const bad = (k) => showErrors.value && missing.value.includes(k)
@@ -148,10 +154,6 @@ async function saveInvoice() {
   const r2 = removed.length ? await supabase.from('items').update({ invoice_id: null }).in('id', removed) : {}
   if (r1.error || r2.error) { err.value = '發票已儲存，但料件連結失敗：' + (r1.error || r2.error).message }
 
-  if (payload.payment_terms && vendorTerms.value[e.vendor] !== payload.payment_terms) {
-    await supabase.from('vendors').update({ payment_terms: payload.payment_terms }).eq('name', e.vendor)
-    vendorTerms.value = { ...vendorTerms.value, [e.vendor]: payload.payment_terms }
-  }
   edit.value = { ...edit.value, ...data }
   await loadInvoices()
   return data
@@ -255,12 +257,16 @@ async function removeInvoice() {
         </label>
         <label>請購單號<input v-model="edit.pr_no" placeholder="V2026100005" /></label>
         <label>報價單編號<input v-model="edit.quote_no" /></label>
-        <label>交易條件
-          <select v-model="edit.payment_terms">
-            <option value="">請選擇</option>
-            <option v-for="t in termOptions" :key="t" :value="t">{{ t }}</option>
-          </select>
-        </label>
+        <div class="terms-field" :class="{ invalid: bad('payment_terms') }">
+          <span class="muted">交易條件</span>
+          <strong v-if="edit.payment_terms">{{ edit.payment_terms }}</strong>
+          <span v-else class="warn">{{ edit.vendor }} 尚未設定，請到 <router-link to="/settings">設定</router-link> 設定</span>
+          <small v-if="settingTerms && edit.payment_terms !== settingTerms" class="warn">
+            設定頁目前是 {{ settingTerms }}
+            <button type="button" class="btn link" @click="applySettingTerms">套用</button>
+          </small>
+          <small v-else-if="edit.payment_terms" class="muted">依設定頁的廠商設定，要改請到 <router-link to="/settings">設定</router-link></small>
+        </div>
         <label>預計付款日<input v-model="edit.pay_due_date" type="date" @input="dueTouched = true" />
           <small class="muted">依交易條件自動計算（發票月底 + 天數），可修改</small>
         </label>
