@@ -159,7 +159,7 @@ function isEmpty(v) {
 }
 
 const missing = computed(() => {
-  const keys = ['project', 'part_name', 'requester', 'vendor']
+  const keys = ['project', 'requester', 'part_name', 'vendor']
   if (!hasLines.value) keys.push('qty')
   if (form.status !== 'quoted') keys.push('due_date')
   if (form.status === 'received') keys.push('received_date')
@@ -239,7 +239,6 @@ async function save() {
             <option :value="ADD_NEW">＋ 新增專案…</option>
           </select>
         </label>
-        <label class="span2" :class="{ invalid: bad('part_name') }">品名 *<input v-model="form.part_name" /></label>
         <label class="span2" :class="{ invalid: bad('requester') }">需求人 *
           <select v-model="form.requester">
             <option value="" disabled>請選擇需求人</option>
@@ -247,6 +246,7 @@ async function save() {
             <option :value="ADD_NEW">＋ 新增需求人…</option>
           </select>
         </label>
+        <label class="span2" :class="{ invalid: bad('part_name') }">品名 *<input v-model="form.part_name" /></label>
         <label v-if="original?.spec" class="span2">規格 / 說明（舊資料）<textarea v-model="form.spec" rows="2" /></label>
         <template v-if="!hasLines">
           <label :class="{ invalid: bad('qty') }">數量 *<input v-model.number="form.qty" type="number" min="0" step="any" inputmode="decimal" /></label>
