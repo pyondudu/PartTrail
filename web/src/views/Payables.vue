@@ -209,9 +209,11 @@ function checkUnpasted() {
 }
 
 // 已登打清單篩選：月份（發票日期）、廠商
-const filterMonth = ref('')
+// 預設只看本月（依發票日期）；要看以前的自己改篩選
+const thisMonth = todayStr().slice(0, 7)
+const filterMonth = ref(thisMonth)
 const filterVendor = ref('')
-const monthOptions = computed(() => [...new Set(invoices.value.map((v) => v.invoice_date?.slice(0, 7)).filter(Boolean))].sort().reverse())
+const monthOptions = computed(() => [...new Set([thisMonth, ...invoices.value.map((v) => v.invoice_date?.slice(0, 7)).filter(Boolean)])].sort().reverse())
 const vendorOptions = computed(() => [...new Set(invoices.value.map((v) => v.vendor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant')))
 const shownInvoices = computed(() => invoices.value.filter((v) =>
   (!filterMonth.value || v.invoice_date?.startsWith(filterMonth.value)) && (!filterVendor.value || v.vendor === filterVendor.value)))
@@ -323,7 +325,7 @@ async function removeInvoice() {
           <option v-for="v in vendorOptions" :key="v" :value="v">{{ v }}</option>
         </select>
         <span class="muted small">{{ shownInvoices.length }} 張</span>
-        <button v-if="filterMonth || filterVendor" class="btn link" @click="filterMonth = ''; filterVendor = ''">清除篩選</button>
+        <button v-if="filterMonth !== thisMonth || filterVendor" class="btn link" @click="filterMonth = thisMonth; filterVendor = ''">回到本月</button>
       </div>
       <div v-if="checked.size" class="batch-bar">
         <span>已勾選 {{ checked.size }} 張</span>
