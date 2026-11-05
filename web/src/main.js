@@ -18,7 +18,7 @@ const router = createRouter({
     { path: '/payables', component: Payables },
     { path: '/quotes', component: Quotes },
   ],
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior: (to, from, saved) => saved || { top: 0 },
 })
 
 createApp(App).use(router).mount('#app')

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
@@ -9,6 +9,13 @@ import { STATUS, urgency, daysText, fmtDate, fmtDateTime, fmtMoney, progressText
 
 const props = defineProps({ id: String })
 const router = useRouter()
+const route = useRoute()
+// 從報價查詢點進來：返回鈕回報價查詢（保留搜尋與捲動位置）
+const fromQuotes = computed(() => route.query.from === 'quotes')
+function backToQuotes() {
+  if (String(window.history.state?.back ?? '').startsWith('/quotes')) router.back()
+  else router.push('/quotes')
+}
 const item = computed(() => getItem(props.id))
 
 const history = ref([])
@@ -111,7 +118,8 @@ async function removeItem() {
   </div>
   <div v-else class="detail">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 總表</router-link>
+      <button v-if="fromQuotes" class="btn ghost small" @click="backToQuotes">← 報價查詢</button>
+      <router-link v-else to="/" class="btn ghost small">← 總表</router-link>
       <div class="head-actions">
         <button class="btn ghost small" @click="copyProgress">📋 複製進度</button>
         <template v-if="store.isEditor">

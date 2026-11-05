@@ -1,11 +1,16 @@
-<script setup>
-import { computed, ref } from 'vue'
-import { store } from '../lib/store'
-import { fmtDate, fmtMoney } from '../lib/util'
+<script>
+import { ref } from 'vue'
 
+// 搜尋與篩選放在模組層：點進料件再回來時保留
 const q = ref('')
 const vendor = ref('')
 const project = ref('')
+</script>
+
+<script setup>
+import { computed } from 'vue'
+import { store } from '../lib/store'
+import { fmtDate, fmtMoney } from '../lib/util'
 
 const vendors = computed(() => [...new Set(store.items.map((i) => i.vendor).filter(Boolean))].sort())
 const projects = computed(() => [...new Set(store.items.map((i) => i.project).filter(Boolean))].sort())
@@ -63,7 +68,7 @@ const rows = computed(() =>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in rows" :key="r.item.id" @click="$router.push('/item/' + r.item.id)">
+          <tr v-for="r in rows" :key="r.item.id" @click="$router.push({ path: '/item/' + r.item.id, query: { from: 'quotes' } })">
             <td class="nowrap">{{ fmtDate(r.item.quote_date) }}</td>
             <td>{{ r.item.vendor }}</td>
             <td>{{ r.item.project || '—' }}</td>
