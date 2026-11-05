@@ -40,7 +40,7 @@ const rows = computed(() =>
 <template>
   <div class="quotes">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 總表</router-link>
+      <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
       <h2>報價查詢</h2>
     </div>
 
