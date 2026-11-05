@@ -22,12 +22,14 @@ export function itemsText(items) {
 }
 
 // 交易條件用選的（廠商與發票共用）
-export const TERMS = ['Net 90days', 'Net 60days', 'Net 30days']
+export const TERMS = ['Net 90days', 'Net 60days', 'Net 30days', 'End of Month']
 
 // 交易條件「Net 90days」→ 發票月底起算 90 天（例：10/14 → 10/31 + 90 = 隔年 1/29）
+// 「End of Month」→ 發票當月月底
 export function payDueDate(invoiceDate, terms) {
-  const n = Number(String(terms || '').match(/\d+/)?.[0])
-  if (!invoiceDate || !n) return ''
+  const eom = /end of month/i.test(String(terms || ''))
+  const n = eom ? 0 : Number(String(terms || '').match(/\d+/)?.[0])
+  if (!invoiceDate || (!n && !eom)) return ''
   const { y, m } = ymd(invoiceDate)
   const d = new Date(y, m, 0) // 發票當月最後一天
   d.setDate(d.getDate() + n)
