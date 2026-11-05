@@ -114,12 +114,12 @@ async function removeItem() {
 <template>
   <p v-if="!item && store.loading" class="muted center">載入中…</p>
   <div v-else-if="!item" class="card center">
-    找不到這筆料件（可能已刪除）。<router-link to="/">回總表</router-link>
+    找不到這筆料件（可能已刪除）。<router-link to="/">回收貨總表</router-link>
   </div>
   <div v-else class="detail">
     <div class="page-head">
       <button v-if="fromQuotes" class="btn ghost small" @click="backToQuotes">← 報價查詢</button>
-      <router-link v-else to="/" class="btn ghost small">← 總表</router-link>
+      <router-link v-else to="/" class="btn ghost small">← 收貨總表</router-link>
       <div class="head-actions">
         <button class="btn ghost small" @click="copyProgress">📋 複製進度</button>
         <template v-if="store.isEditor">

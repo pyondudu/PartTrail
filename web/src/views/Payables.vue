@@ -230,7 +230,7 @@ async function removeInvoice() {
   <div v-if="!store.isEditor" class="card center">唯讀帳號無法使用應付帳款。</div>
   <div v-else class="detail payables">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 總表</router-link>
+      <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
       <h2>應付帳款</h2>
     </div>
 
