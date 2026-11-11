@@ -68,6 +68,16 @@ export function lineAmount(l) {
   return Math.round(Number(l.qty) * Number(l.price) * 100) / 100
 }
 
+// 成本（未稅）：有報價明細金額就用明細合計；否則由含稅報價金額換算（estimated）；都沒有回傳 null
+export function untaxedCost(item) {
+  const lines = item.quote_lines ?? []
+  if (lines.some((l) => lineAmount(l) !== null)) return { amount: quoteTotals(lines).subtotal, estimated: false }
+  if (item.quote_amount !== null && item.quote_amount !== undefined && item.quote_amount !== '') {
+    return { amount: Math.round(Number(item.quote_amount) / (1 + TAX_RATE)), estimated: true }
+  }
+  return { amount: null, estimated: false }
+}
+
 export function quoteTotals(lines) {
   const list = lines ?? []
   const qty = list.reduce((s, l) => s + (Number(l.qty) || 0), 0)

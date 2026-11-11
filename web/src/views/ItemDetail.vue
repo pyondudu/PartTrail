@@ -11,10 +11,13 @@ const props = defineProps({ id: String })
 const router = useRouter()
 const route = useRoute()
 // 從報價查詢點進來：返回鈕回報價查詢（保留搜尋與捲動位置）
-const fromQuotes = computed(() => route.query.from === 'quotes')
-function backToQuotes() {
-  if (String(window.history.state?.back ?? '').startsWith('/quotes')) router.back()
-  else router.push('/quotes')
+// 從報價查詢／成本分析點進來時，返回鈕回到原頁（保留搜尋、篩選與捲動位置）
+const BACK = { quotes: { path: '/quotes', label: '← 報價查詢' }, cost: { path: '/cost', label: '← 成本分析' } }
+const backTo = computed(() => BACK[route.query.from] ?? null)
+function goBack() {
+  const { path } = backTo.value
+  if (String(window.history.state?.back ?? '').startsWith(path)) router.back()
+  else router.push(path)
 }
 const item = computed(() => getItem(props.id))
 
@@ -118,7 +121,7 @@ async function removeItem() {
   </div>
   <div v-else class="detail">
     <div class="page-head">
-      <button v-if="fromQuotes" class="btn ghost small" @click="backToQuotes">← 報價查詢</button>
+      <button v-if="backTo" class="btn ghost small" @click="goBack">{{ backTo.label }}</button>
       <router-link v-else to="/" class="btn ghost small">← 收貨總表</router-link>
       <div class="head-actions">
         <button class="btn ghost small" @click="copyProgress">📋 複製進度</button>
