@@ -11,7 +11,7 @@ const router = useRouter()
 const isNew = computed(() => !props.id)
 
 const EMPTY = {
-  project: '', part_name: '', spec: '', qty: null, unit: 'pcs',
+  project: '', our_quote_no: '', part_name: '', spec: '', qty: null, unit: 'pcs',
   vendor: '', requester: '',
   quote_no: '', quote_amount: null, quote_date: todayStr(),
   status: 'quoted', order_date: null, due_date: null,
@@ -239,6 +239,7 @@ async function save() {
             <option :value="ADD_NEW">＋ 新增專案…</option>
           </select>
         </label>
+        <label class="span2">公司報價單號<input v-model="form.our_quote_no" placeholder="給客戶的報價單號（回簽即訂單）" /></label>
         <label class="span2" :class="{ invalid: bad('requester') }">需求人 *
           <select v-model="form.requester">
             <option value="" disabled>請選擇需求人</option>
@@ -297,7 +298,7 @@ async function save() {
           </select>
           <small class="muted">新增廠商或改交易條件請到「<router-link to="/settings">設定</router-link>」</small>
         </label>
-        <label>報價單號<input v-model="form.quote_no" placeholder="LINE 報價可留空" /></label>
+        <label>廠商報價單號<input v-model="form.quote_no" placeholder="LINE 報價可留空" /></label>
         <label>報價金額（含稅）<input v-model.number="form.quote_amount" type="number" min="0" step="any" inputmode="decimal" @input="amountTouched = true" />
           <small v-if="hasLines && form.quote_amount !== totals.total" class="muted">
             依明細 {{ fmtMoney(totals.total) }} <button type="button" class="btn link" @click="amountTouched = false; form.quote_amount = totals.total">套用</button>

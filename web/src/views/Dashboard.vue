@@ -51,7 +51,7 @@ const list = computed(() => {
       if (requester.value && i.requester !== requester.value) return false
       if (quick.value && urgency(i) !== quick.value) return false
       if (kw) {
-        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.note, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
+        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.our_quote_no, i.note, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
         if (!hay.includes(kw)) return false
       }
       return true
@@ -119,7 +119,7 @@ function toggleQuick(k) {
   <table v-if="list.length" class="items-table">
     <thead>
       <tr>
-        <th>交期</th><th>狀態</th><th>專案</th><th>廠商</th><th>品名</th><th>需求人</th><th class="num">數量</th>
+        <th>交期</th><th>狀態</th><th>專案</th><th>公司報價單號</th><th>廠商</th><th>品名</th><th>需求人</th><th class="num">數量</th>
       </tr>
     </thead>
     <tbody>
@@ -130,6 +130,7 @@ function toggleQuick(k) {
         </td>
         <td><span class="pill" :class="i.status">{{ STATUS[i.status].label }}</span></td>
         <td>{{ i.project || '—' }}</td>
+        <td>{{ i.our_quote_no || '—' }}</td>
         <td>{{ i.vendor }}</td>
         <td>
           <div class="name">{{ i.part_name }}</div>
@@ -152,6 +153,7 @@ function toggleQuick(k) {
       <div v-if="firstLineText(i)" class="line1">{{ firstLineText(i) }}</div>
       <div class="row2">
         <span v-if="i.project">{{ i.project }} · </span>
+        <span v-if="i.our_quote_no">{{ i.our_quote_no }} · </span>
         <span>{{ i.vendor }}</span>
         <span v-if="i.requester"> · {{ i.requester }}</span>
         <span v-if="i.qty"> · {{ i.qty }} {{ i.unit }}</span>

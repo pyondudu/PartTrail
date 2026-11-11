@@ -142,10 +142,11 @@ async function removeItem() {
     <section class="card">
       <dl class="kv">
         <dt>專案</dt><dd>{{ item.project || '—' }}</dd>
+        <dt>公司報價單號</dt><dd>{{ item.our_quote_no || '—' }}</dd>
         <dt>廠商</dt><dd>{{ item.vendor }}</dd>
         <dt>需求人</dt><dd>{{ item.requester || '—' }}</dd>
         <template v-if="item.spec"><dt>規格</dt><dd class="pre">{{ item.spec }}</dd></template>
-        <dt>報價單號</dt><dd>{{ item.quote_no || '—' }}</dd>
+        <dt>廠商報價單號</dt><dd>{{ item.quote_no || '—' }}</dd>
         <dt>報價金額（含稅）</dt><dd>{{ fmtMoney(item.quote_amount) }}</dd>
         <dt>報價日</dt><dd>{{ fmtDate(item.quote_date) }}</dd>
         <dt>下單日</dt><dd>{{ fmtDate(item.order_date) }}</dd>

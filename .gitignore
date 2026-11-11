@@ -11,3 +11,4 @@ widget/config.json
 # 廠商、需求人名單（已匯入 Supabase，不公開）
 supabase/vendors_seed.sql
 supabase/requesters_seed.sql
+.claude/settings.local.json
