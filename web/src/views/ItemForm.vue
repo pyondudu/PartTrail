@@ -104,7 +104,7 @@ onMounted(async () => {
   serialVendors.value = new Set((data ?? []).map((r) => r.name))
 })
 const needSerials = computed(() => serialVendors.value.has(form.vendor))
-const splitSerials = (t) => String(t ?? '').split(/[\s,，、;；.。]+/).filter(Boolean)
+const splitSerials = (t) => String(t ?? '').split(/[\s,，、;；.。&＆/／|｜]+/).filter(Boolean)
 const serialList = computed(() => splitSerials(form.serials))
 const expectQty = computed(() => (hasLines.value ? totals.value.qty : form.qty))
 
@@ -361,7 +361,7 @@ async function save() {
       <div class="grid">
         <label :class="{ invalid: bad('received_date') }">到貨日 *<input v-model="form.received_date" type="date" /></label>
         <label v-if="needSerials || original?.serials" class="span2" :class="{ invalid: bad('serials') }">序號{{ needSerials ? ' *' : '' }}
-          <textarea v-model="form.serials" rows="3" placeholder="一行一個，可直接貼上（逗號、句點、空白分隔也可以）" />
+          <textarea v-model="form.serials" rows="3" placeholder="一行一個，可直接貼上（逗號、句點、空白、&amp; 分隔也可以）" />
           <small v-if="serialList.length" class="muted">
             已填 {{ serialList.length }} 個<span v-if="expectQty && serialList.length !== expectQty" class="warn">，數量是 {{ expectQty }}，請確認</span>
           </small>
