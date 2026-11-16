@@ -159,7 +159,7 @@ function isEmpty(v) {
 }
 
 const missing = computed(() => {
-  const keys = ['project', 'requester', 'part_name', 'vendor']
+  const keys = ['requester', 'part_name', 'vendor']
   if (!hasLines.value) keys.push('qty')
   if (form.status !== 'quoted') keys.push('due_date')
   if (form.status === 'received') keys.push('received_date')
@@ -232,9 +232,9 @@ async function save() {
     <fieldset class="card">
       <legend>料件資訊</legend>
       <div class="grid">
-        <label class="span2" :class="{ invalid: bad('project') }">專案 *
+        <label class="span2">專案
           <select v-model="form.project">
-            <option value="" disabled>請選擇專案</option>
+            <option value="">（不指定）</option>
             <option v-for="p in projects" :key="p" :value="p">{{ p }}</option>
             <option :value="ADD_NEW">＋ 新增專案…</option>
           </select>
