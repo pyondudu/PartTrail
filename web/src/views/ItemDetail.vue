@@ -166,7 +166,7 @@ async function removeItem() {
     <section v-if="invoice" class="card">
       <div class="section-head">
         <h3>發票</h3>
-        <router-link v-if="store.isEditor" to="/payables" class="btn ghost small">應付帳款</router-link>
+        <router-link to="/payables" class="btn ghost small">應付帳款</router-link>
       </div>
       <dl class="kv">
         <dt>發票號碼</dt><dd>{{ invoice.invoice_no }}</dd>

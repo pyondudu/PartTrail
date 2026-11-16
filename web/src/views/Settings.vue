@@ -65,8 +65,7 @@ async function removeVendor(v) {
 </script>
 
 <template>
-  <div v-if="!store.isEditor" class="card center">唯讀帳號無法使用設定。</div>
-  <div v-else class="detail">
+  <div class="detail">
     <div class="page-head">
       <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
       <h2>設定</h2>
@@ -76,7 +75,7 @@ async function removeVendor(v) {
       <div class="section-head"><h3>廠商與交易條件</h3></div>
       <p class="muted">新增料件時的廠商下拉選單來自這裡；交易條件會在登打發票時自動帶入並計算預計付款日。</p>
 
-      <form class="vendor-add" @submit.prevent="addVendor">
+      <form v-if="store.isEditor" class="vendor-add" @submit.prevent="addVendor">
         <label>新增廠商<input v-model="newName" placeholder="廠商名稱" /></label>
         <label>交易條件
           <select v-model="newTerms">
@@ -95,11 +94,12 @@ async function removeVendor(v) {
             <strong>{{ v.name }}</strong>
             <span class="muted small">{{ itemCount[v.name] ? `${itemCount[v.name]} 筆料件` : '尚無料件' }}</span>
           </div>
-          <select :value="v.payment_terms || ''" :class="{ unset: !v.payment_terms }" aria-label="交易條件" @change="setTerms(v, $event.target.value)">
+          <select v-if="store.isEditor" :value="v.payment_terms || ''" :class="{ unset: !v.payment_terms }" aria-label="交易條件" @change="setTerms(v, $event.target.value)">
             <option value="">未設定</option>
             <option v-for="t in termOptions(v.payment_terms)" :key="t" :value="t">{{ t }}</option>
           </select>
-          <button v-if="!itemCount[v.name]" class="btn link danger" title="刪除" @click="removeVendor(v)">刪除</button>
+          <span v-else :class="{ unset: !v.payment_terms }">{{ v.payment_terms || '未設定' }}</span>
+          <button v-if="store.isEditor && !itemCount[v.name]" class="btn link danger" title="刪除" @click="removeVendor(v)">刪除</button>
           <span v-else class="vendor-del-gap" />
         </li>
       </ul>
@@ -114,7 +114,7 @@ async function removeVendor(v) {
 .vendor-list { list-style: none; margin: 0; padding: 0; }
 .vendor-list li { display: grid; grid-template-columns: 1fr 160px 48px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
 .vendor-name { display: flex; flex-direction: column; min-width: 0; }
-.vendor-list select.unset { color: var(--soon); }
+.vendor-list .unset { color: var(--soon); }
 .small { font-size: 0.8rem; }
 @media (max-width: 640px) {
   .vendor-add { grid-template-columns: 1fr; }

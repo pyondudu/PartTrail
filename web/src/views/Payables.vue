@@ -230,14 +230,13 @@ async function removeInvoice() {
 </script>
 
 <template>
-  <div v-if="!store.isEditor" class="card center">唯讀帳號無法使用應付帳款。</div>
-  <div v-else class="detail payables">
+  <div class="detail payables">
     <div class="page-head">
       <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
       <h2>應付帳款</h2>
     </div>
 
-    <section v-if="edit" class="card inv-editor">
+    <section v-if="edit && store.isEditor" class="card inv-editor">
       <div class="section-head">
         <h3>{{ edit.id ? '編輯發票' : '輸入發票' }}：{{ edit.vendor }}</h3>
         <button class="btn link" @click="edit = null">取消</button>
@@ -305,7 +304,7 @@ async function removeInvoice() {
             <strong>{{ g.vendor }}</strong> <span class="muted">{{ g.quote_no || '無報價單號' }}</span>
             <div class="muted small">{{ g.items.map((i) => i.part_name).join('、') }}</div>
           </div>
-          <button class="btn small primary" @click="startNew(g)">輸入發票</button>
+          <button v-if="store.isEditor" class="btn small primary" @click="startNew(g)">輸入發票</button>
         </li>
       </ul>
     </section>
@@ -313,7 +312,7 @@ async function removeInvoice() {
     <section class="card">
       <div class="section-head">
         <h3>已登打發票</h3>
-        <button v-if="shownInvoices.some((v) => !v.exported_at)" class="btn link" @click="checkUnpasted">勾選全部未貼上</button>
+        <button v-if="store.isEditor && shownInvoices.some((v) => !v.exported_at)" class="btn link" @click="checkUnpasted">勾選全部未貼上</button>
       </div>
       <div v-if="invoices.length" class="inv-filters">
         <select v-model="filterMonth">
@@ -330,7 +329,7 @@ async function removeInvoice() {
       <div v-if="checked.size" class="batch-bar">
         <span>已勾選 {{ checked.size }} 張</span>
         <button class="btn small primary" @click="copy(checkedList)">📋 複製 {{ checked.size }} 列</button>
-        <button class="btn small ghost" @click="setPasted(checkedList, true, { clearChecked: true })">✓ 標記已貼上</button>
+        <button v-if="store.isEditor" class="btn small ghost" @click="setPasted(checkedList, true, { clearChecked: true })">✓ 標記已貼上</button>
         <button class="btn link" @click="checked = new Set()">清除</button>
       </div>
       <p v-if="!invoices.length" class="muted">尚無發票</p>
@@ -342,12 +341,13 @@ async function removeInvoice() {
             <strong>{{ inv.vendor }}</strong> <span class="muted">{{ inv.invoice_no }} · {{ fmtDate(inv.invoice_date) }}</span>
             <div class="muted small">
               NT${{ fmtMoney(inv.amount) }} · 預計付款 {{ fmtDate(inv.pay_due_date) }} ·
-              <button type="button" class="paste-toggle" :class="inv.exported_at ? 'pasted' : 'warn'" :title="inv.exported_at ? '點一下取消已貼上' : '點一下標記已貼上'" @click="setPasted([inv], !inv.exported_at)">{{ inv.exported_at ? '已貼上' : '未貼上' }}</button>
+              <button type="button" class="paste-toggle" v-if="store.isEditor" :class="inv.exported_at ? 'pasted' : 'warn'" :title="inv.exported_at ? '點一下取消已貼上' : '點一下標記已貼上'" @click="setPasted([inv], !inv.exported_at)">{{ inv.exported_at ? '已貼上' : '未貼上' }}</button>
+              <span v-else :class="inv.exported_at ? 'pasted' : 'warn'">{{ inv.exported_at ? '已貼上' : '未貼上' }}</span>
             </div>
           </div>
           <div class="head-actions">
             <button class="btn small ghost" title="複製這列" @click="copy([inv])">📋</button>
-            <button class="btn small ghost" @click="startEdit(inv)">編輯</button>
+            <button v-if="store.isEditor" class="btn small ghost" @click="startEdit(inv)">編輯</button>
           </div>
         </li>
       </ul>
