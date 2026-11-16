@@ -13,7 +13,7 @@ const status = ref(saved.status ?? 'active') // active | all | quoted | ordered 
 const project = ref(saved.project ?? '')
 const vendor = ref(saved.vendor ?? '')
 const requester = ref(saved.requester ?? '')
-const quick = ref('') // overdue | soon | ''
+const quick = ref('') // overdue | soon | month（本月已收貨）| ''
 
 watch([status, project, vendor, requester], () => {
   try {
@@ -49,7 +49,9 @@ const list = computed(() => {
       if (project.value && i.project !== project.value) return false
       if (vendor.value && i.vendor !== vendor.value) return false
       if (requester.value && i.requester !== requester.value) return false
-      if (quick.value && urgency(i) !== quick.value) return false
+      if (quick.value === 'month') {
+        if (!i.received_date?.startsWith(todayStr().slice(0, 7))) return false
+      } else if (quick.value && urgency(i) !== quick.value) return false
       if (kw) {
         const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.our_quote_no, i.note, i.serials, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
         if (!hay.includes(kw)) return false
@@ -64,10 +66,13 @@ const list = computed(() => {
     })
 })
 
+const QUICK_LABEL = { overdue: '已逾期', soon: '3 日內到貨', month: '本月已收貨' }
 function toggleQuick(k) {
   quick.value = quick.value === k ? '' : k
-  if (quick.value) status.value = 'active'
+  if (quick.value) status.value = k === 'month' ? 'received' : 'active'
 }
+// 本月已收貨只在「已收貨」下有意義；改了狀態選單就取消
+watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.value = '' })
 </script>
 
 <template>
@@ -81,7 +86,7 @@ function toggleQuick(k) {
     <button class="stat" :class="{ on: !quick && status === 'active' }" @click="quick = ''; status = 'active'">
       <span class="num">{{ stats.active }}</span><span class="lbl">進行中</span>
     </button>
-    <button class="stat" :class="{ on: !quick && status === 'received' }" @click="quick = ''; status = 'received'">
+    <button class="stat" :class="{ on: quick === 'month' }" @click="toggleQuick('month')">
       <span class="num">{{ stats.receivedMonth }}</span><span class="lbl">本月已收貨</span>
     </button>
   </section>
@@ -109,7 +114,7 @@ function toggleQuick(k) {
   </section>
 
   <p v-if="quick" class="filter-note">
-    只顯示「{{ quick === 'overdue' ? '已逾期' : '3 日內到貨' }}」<button class="btn link" @click="quick = ''">清除</button>
+    只顯示「{{ QUICK_LABEL[quick] }}」<button class="btn link" @click="quick = ''">清除</button>
   </p>
 
   <p v-if="store.loading" class="muted center">載入中…</p>
