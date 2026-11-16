@@ -46,7 +46,7 @@ const WEEK = '日一二三四五六'
 export function fmtDate(s) {
   if (!s) return '—'
   const d = parseDate(s)
-  return `${d.getMonth() + 1}/${d.getDate()}（${WEEK[d.getDay()]}）`
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${WEEK[d.getDay()]}）`
 }
 
 export function fmtDateTime(s) {
