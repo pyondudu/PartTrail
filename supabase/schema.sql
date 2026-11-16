@@ -132,6 +132,11 @@ create table if not exists public.invoices (
 alter table public.items   add column if not exists quote_lines jsonb;
 alter table public.items   add column if not exists invoice_id uuid references public.invoices(id) on delete set null;
 alter table public.vendors add column if not exists payment_terms text;
+-- 公司報價單號（給客戶的報價單號，≠ 廠商的 quote_no）
+alter table public.items   add column if not exists our_quote_no text;
+-- 貨件序號：一行一個；vendors.need_serials 為 true 的廠商收貨時必填
+alter table public.items   add column if not exists serials text;
+alter table public.vendors add column if not exists need_serials boolean not null default false;
 create index if not exists items_invoice_idx on public.items (invoice_id);
 
 -- ─────────────────────────────────────────────

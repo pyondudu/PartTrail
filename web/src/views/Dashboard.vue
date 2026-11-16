@@ -51,7 +51,7 @@ const list = computed(() => {
       if (requester.value && i.requester !== requester.value) return false
       if (quick.value && urgency(i) !== quick.value) return false
       if (kw) {
-        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.our_quote_no, i.note, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
+        const hay = [i.part_name, i.spec, i.vendor, i.requester, i.quote_no, i.our_quote_no, i.note, i.serials, ...(i.quote_lines ?? []).map((l) => l.name)].join(' ').toLowerCase()
         if (!hay.includes(kw)) return false
       }
       return true
@@ -87,7 +87,7 @@ function toggleQuick(k) {
   </section>
 
   <section class="toolbar">
-    <input v-model="q" type="search" placeholder="搜尋品名、廠商、需求人、報價單號…" class="search" />
+    <input v-model="q" type="search" placeholder="搜尋品名、廠商、需求人、報價單號、序號…" class="search" />
     <select v-model="status">
       <option value="active">進行中</option>
       <option value="all">全部</option>

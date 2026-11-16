@@ -15,7 +15,7 @@ const EMPTY = {
   vendor: '', requester: '',
   quote_no: '', quote_amount: null, quote_date: todayStr(),
   status: 'quoted', order_date: null, due_date: null,
-  received_date: null, note: '',
+  received_date: null, serials: '', note: '',
 }
 const blankLine = (unit = 'pcs') => ({ name: '', qty: null, unit, price: null })
 const form = reactive({ ...EMPTY, quote_lines: [blankLine()] })
@@ -97,6 +97,17 @@ function nameList(table, field, label) {
 const vendors = nameList('vendors', 'vendor', '廠商')
 const requesters = nameList('requesters', 'requester', '需求人')
 
+// 貨件序號：設定頁勾「需序號」的廠商，標為已收貨時必填；一行一個，貼上時逗號、句點、空白也當分隔
+const serialVendors = ref(new Set())
+onMounted(async () => {
+  const { data } = await supabase.from('vendors').select('name').eq('need_serials', true)
+  serialVendors.value = new Set((data ?? []).map((r) => r.name))
+})
+const needSerials = computed(() => serialVendors.value.has(form.vendor))
+const splitSerials = (t) => String(t ?? '').split(/[\s,，、;；.。]+/).filter(Boolean)
+const serialList = computed(() => splitSerials(form.serials))
+const expectQty = computed(() => (hasLines.value ? totals.value.qty : form.qty))
+
 // 專案：列出進行中（未收貨）料件的專案；新專案當場輸入，存檔後自然出現在清單
 const extraProjects = ref([])
 const projects = computed(() => {
@@ -150,7 +161,7 @@ function setStatus(k) {
 // 必填欄位：追交期必要的資訊；依狀態只檢查目前顯示的區塊
 const LABELS = {
   project: '專案', part_name: '品名', requester: '需求人', qty: '數量', vendor: '廠商',
-  due_date: '交期', reason: '交期變更原因', received_date: '到貨日',
+  due_date: '交期', reason: '交期變更原因', received_date: '到貨日', serials: '序號',
 }
 const showErrors = ref(false)
 
@@ -164,6 +175,7 @@ const missing = computed(() => {
   if (form.status !== 'quoted') keys.push('due_date')
   if (form.status === 'received') keys.push('received_date')
   const list = keys.filter((k) => isEmpty(form[k]))
+  if (form.status === 'received' && needSerials.value && !serialList.value.length) list.push('serials')
   if (dueChanged.value && isEmpty(reason.value)) list.push('reason')
   return list
 })
@@ -189,6 +201,7 @@ async function save() {
   busy.value = true
   const payload = { ...form }
   for (const k of Object.keys(payload)) if (payload[k] === '') payload[k] = null
+  payload.serials = serialList.value.join('\n') || null
   if (dueChanged.value) payload.due_change_reason = reason.value.trim()
   payload.quote_lines = hasLines.value
     ? filledLines.value.map((l) => ({ name: String(l.name ?? '').trim(), qty: l.qty ?? null, unit: l.unit || null, price: l.price ?? null }))
@@ -347,6 +360,12 @@ async function save() {
       <legend>到貨</legend>
       <div class="grid">
         <label :class="{ invalid: bad('received_date') }">到貨日 *<input v-model="form.received_date" type="date" /></label>
+        <label v-if="needSerials || original?.serials" class="span2" :class="{ invalid: bad('serials') }">序號{{ needSerials ? ' *' : '' }}
+          <textarea v-model="form.serials" rows="3" placeholder="一行一個，可直接貼上（逗號、句點、空白分隔也可以）" />
+          <small v-if="serialList.length" class="muted">
+            已填 {{ serialList.length }} 個<span v-if="expectQty && serialList.length !== expectQty" class="warn">，數量是 {{ expectQty }}，請確認</span>
+          </small>
+        </label>
       </div>
     </fieldset>
 

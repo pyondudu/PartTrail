@@ -30,7 +30,7 @@ const rows = computed(() =>
     const lines = i.quote_lines ?? []
     const hits = kw.value ? lines.filter((l) => String(l.name ?? '').toLowerCase().includes(kw.value)) : []
     if (kw.value) {
-      const hay = [i.part_name, i.spec, i.vendor, i.quote_no, i.our_quote_no, i.project, i.note].join(' ').toLowerCase()
+      const hay = [i.part_name, i.spec, i.vendor, i.quote_no, i.our_quote_no, i.project, i.note, i.serials].join(' ').toLowerCase()
       if (!hits.length && !hay.includes(kw.value)) return []
     }
     return [{ item: i, count: lines.length, hits }]
@@ -45,7 +45,7 @@ const rows = computed(() =>
     </div>
 
     <section class="toolbar">
-      <input v-model="q" type="search" placeholder="搜尋品名規格、廠商、報價單號、專案、備註…" class="search" />
+      <input v-model="q" type="search" placeholder="搜尋品名規格、廠商、報價單號、專案、備註、序號…" class="search" />
       <select v-model="vendor">
         <option value="">所有廠商</option>
         <option v-for="v in vendors" :key="v">{{ v }}</option>

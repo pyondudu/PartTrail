@@ -18,7 +18,7 @@ function flash(msg) {
 }
 
 async function load() {
-  const { data, error } = await supabase.from('vendors').select('id, name, payment_terms')
+  const { data, error } = await supabase.from('vendors').select('id, name, payment_terms, need_serials')
   if (error) err.value = '讀取廠商失敗：' + error.message
   vendors.value = (data ?? []).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
 }
@@ -55,6 +55,14 @@ async function setTerms(v, terms) {
   flash(`${v.name}：${terms || '未設定'}`)
 }
 
+async function setNeedSerials(v, on) {
+  const prev = v.need_serials
+  v.need_serials = on
+  const { error } = await supabase.from('vendors').update({ need_serials: on }).eq('id', v.id)
+  if (error) { v.need_serials = prev; return alert('儲存失敗：' + error.message) }
+  flash(`${v.name}：${on ? '收貨時需記錄序號' : '不需記錄序號'}`)
+}
+
 async function removeVendor(v) {
   if (!confirm(`刪除廠商「${v.name}」？`)) return
   const { error } = await supabase.from('vendors').delete().eq('id', v.id)
@@ -73,7 +81,7 @@ async function removeVendor(v) {
 
     <section class="card">
       <div class="section-head"><h3>廠商與交易條件</h3></div>
-      <p class="muted">新增料件時的廠商下拉選單來自這裡；交易條件會在登打發票時自動帶入並計算預計付款日。</p>
+      <p class="muted">新增料件時的廠商下拉選單來自這裡；交易條件會在登打發票時自動帶入並計算預計付款日。勾「需序號」的廠商，料件標為已收貨時必須填貨件序號。</p>
 
       <form v-if="store.isEditor" class="vendor-add" @submit.prevent="addVendor">
         <label>新增廠商<input v-model="newName" placeholder="廠商名稱" /></label>
@@ -99,6 +107,10 @@ async function removeVendor(v) {
             <option v-for="t in termOptions(v.payment_terms)" :key="t" :value="t">{{ t }}</option>
           </select>
           <span v-else :class="{ unset: !v.payment_terms }">{{ v.payment_terms || '未設定' }}</span>
+          <label v-if="store.isEditor" class="check serial-flag" :class="{ on: v.need_serials }" title="收貨時必填序號">
+            <input type="checkbox" :checked="v.need_serials" @change="setNeedSerials(v, $event.target.checked)" />需序號
+          </label>
+          <span v-else class="small">{{ v.need_serials ? '需序號' : '' }}</span>
           <button v-if="store.isEditor && !itemCount[v.name]" class="btn link danger" title="刪除" @click="removeVendor(v)">刪除</button>
           <span v-else class="vendor-del-gap" />
         </li>
@@ -112,12 +124,13 @@ async function removeVendor(v) {
 <style scoped>
 .vendor-add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end; margin: 12px 0 16px; }
 .vendor-list { list-style: none; margin: 0; padding: 0; }
-.vendor-list li { display: grid; grid-template-columns: 1fr 160px 48px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+.vendor-list li { display: grid; grid-template-columns: 1fr 160px 84px 48px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
 .vendor-name { display: flex; flex-direction: column; min-width: 0; }
 .vendor-list .unset { color: var(--soon); }
 .small { font-size: 0.8rem; }
+.serial-flag { gap: 6px; padding: 4px 6px; font-size: 0.85rem; white-space: nowrap; }
 @media (max-width: 640px) {
   .vendor-add { grid-template-columns: 1fr; }
-  .vendor-list li { grid-template-columns: 1fr 130px 44px; }
+  .vendor-list li { grid-template-columns: 1fr 120px 76px 40px; gap: 6px; }
 }
 </style>

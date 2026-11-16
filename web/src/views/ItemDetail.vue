@@ -154,6 +154,7 @@ async function removeItem() {
         <dt>報價日</dt><dd>{{ fmtDate(item.quote_date) }}</dd>
         <dt>下單日</dt><dd>{{ fmtDate(item.order_date) }}</dd>
         <dt>到貨日</dt><dd>{{ fmtDate(item.received_date) }}</dd>
+        <template v-if="item.serials"><dt>序號（{{ item.serials.split('\n').filter(Boolean).length }} 個）</dt><dd class="pre">{{ item.serials }}</dd></template>
         <dt>備註</dt><dd class="pre">{{ item.note || '—' }}</dd>
       </dl>
     </section>
