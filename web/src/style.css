@@ -167,7 +167,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .items-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .items-table .name { font-weight: 600; }
 .items-table .sub, .items-table .days { font-size: 0.8rem; color: var(--muted); }
-.items-table .due { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.items-table .due, .items-table .days { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ── Cards (mobile) ── */
 .items-cards { display: none; flex-direction: column; gap: 10px; }
