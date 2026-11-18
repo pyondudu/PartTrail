@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { configured, supabase } from './lib/supabase'
 import { store, initAuth } from './lib/store'
 import Login from './views/Login.vue'
-import { ICON, SITE_NAME } from './lib/util'
+import { ICON, SITE_NAME, SITE_TAGLINE } from './lib/util'
 import { update, checkUpdate, applyUpdate, formatBuild, watchUpdates } from './lib/update'
 
 const router = useRouter()
@@ -44,7 +44,8 @@ async function logout() {
       <header class="topbar">
         <router-link to="/" class="brand">
           <img :src="ICON" alt="" width="28" height="28" />
-          <span>{{ SITE_NAME }}</span>
+          <span class="brand-name">{{ SITE_NAME }}</span>
+          <span class="brand-tagline">{{ SITE_TAGLINE }}</span>
         </router-link>
         <div class="topbar-right">
           <router-link to="/quotes" class="btn ghost small">報價查詢</router-link>

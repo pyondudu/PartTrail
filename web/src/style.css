@@ -96,12 +96,14 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 /* ── Top bar ── */
 .topbar {
   position: sticky; top: 0; z-index: 10;
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
   padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
   background: var(--surface); border-bottom: var(--topbar-border, 1px solid var(--border));
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; }
-.topbar-right { display: flex; align-items: center; gap: 8px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; white-space: nowrap; flex-shrink: 0; }
+.brand img { flex-shrink: 0; }
+.brand-tagline { font-weight: 500; color: var(--muted); }
+.topbar-right { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
 .role-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
 .role-tag.editor { background: var(--accent); color: var(--accent-ink); }
 

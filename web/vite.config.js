@@ -58,6 +58,6 @@ function sitePlugin() {
 // base 設為相對路徑，部署到 GitHub Pages 子目錄或 Netlify 皆可
 export default defineConfig({
   base: './',
-  define: { __SITE_NAME__: JSON.stringify(cfg.name), __BUILD_ID__: JSON.stringify(BUILD_ID) },
+  define: { __SITE_NAME__: JSON.stringify(cfg.name), __SITE_TAGLINE__: JSON.stringify(cfg.title.replace(cfg.name, '').trim()), __BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [vue(), sitePlugin()],
 })

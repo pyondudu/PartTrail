@@ -111,6 +111,7 @@ export function progressText(item) {
 }
 export const ICON = import.meta.env.BASE_URL + 'app-icon.svg'
 export const SITE_NAME = __SITE_NAME__
+export const SITE_TAGLINE = __SITE_TAGLINE__
 
 // 主管/同事用名字當帳號：Supabase 需要 Email，輸入沒有 @ 時補上這個假網域
 // （例：benson → benson@parttrail.local；在 Supabase 建帳號時也用這個格式）
