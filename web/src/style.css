@@ -145,6 +145,10 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .toolbar .search { flex: 1 1 240px; }
 .toolbar select { flex: 0 1 140px; width: auto; }
+/* 收貨總表：搜尋縮短、下拉固定寬度，專案名稱很長時也不會把整列撐到換行 */
+.toolbar.dash .search { flex: 1 1 200px; max-width: 340px; }
+.toolbar.dash select { flex: 0 1 160px; width: 160px; min-width: 0; text-overflow: ellipsis; }
+.toolbar.dash .btn.primary { margin-left: auto; }
 .filter-note { font-size: 0.875rem; color: var(--muted); margin: 0 0 8px; }
 
 /* ── Status pill ── */
@@ -278,6 +282,8 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
   .items-table { display: none; }
   .items-cards { display: flex; }
   .toolbar select { flex: 1 1 40%; }
+  .toolbar.dash .search { flex-basis: 100%; max-width: none; }
+  .toolbar.dash select { flex: 1 1 40%; }
   .toolbar .btn.primary { flex: 1 1 100%; }
   .grid { grid-template-columns: 1fr; }
   .grid .span2 { grid-column: auto; }

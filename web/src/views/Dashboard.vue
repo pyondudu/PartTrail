@@ -13,18 +13,16 @@ const q = ref('')
 const status = ref(saved.status ?? 'active') // active | all | quoted | ordered | received
 const project = ref(saved.project ?? '')
 const vendor = ref(saved.vendor ?? '')
-const requester = ref(saved.requester ?? '')
 const quick = ref('') // overdue | soon | month（本月已收貨）| ''
 
-watch([status, project, vendor, requester], () => {
+watch([status, project, vendor], () => {
   try {
-    localStorage.setItem(FILTER_KEY, JSON.stringify({ status: status.value, project: project.value, vendor: vendor.value, requester: requester.value }))
+    localStorage.setItem(FILTER_KEY, JSON.stringify({ status: status.value, project: project.value, vendor: vendor.value }))
   } catch {}
 })
 
 const projects = computed(() => [...new Set(store.items.map((i) => i.project).filter(Boolean))].sort())
 const vendors = computed(() => [...new Set(store.items.map((i) => i.vendor).filter(Boolean))].sort())
-const requesters = computed(() => [...new Set(store.items.map((i) => i.requester).filter(Boolean))].sort())
 
 const stats = computed(() => {
   const month = todayStr().slice(0, 7)
@@ -49,7 +47,6 @@ const list = computed(() => {
       if (STATUS_KEYS.includes(status.value) && i.status !== status.value) return false
       if (project.value && i.project !== project.value) return false
       if (vendor.value && i.vendor !== vendor.value) return false
-      if (requester.value && i.requester !== requester.value) return false
       if (quick.value === 'month') {
         if (!i.received_date?.startsWith(todayStr().slice(0, 7))) return false
       } else if (quick.value && urgency(i) !== quick.value) return false
@@ -92,7 +89,7 @@ watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.va
     </button>
   </section>
 
-  <section class="toolbar">
+  <section class="toolbar dash">
     <input v-model="q" type="search" placeholder="搜尋品名、廠商、需求人、報價單號、序號…" class="search" />
     <select v-model="status">
       <option value="active">進行中</option>
@@ -106,10 +103,6 @@ watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.va
     <select v-model="vendor">
       <option value="">所有廠商</option>
       <option v-for="v in vendors" :key="v">{{ v }}</option>
-    </select>
-    <select v-model="requester">
-      <option value="">所有需求人</option>
-      <option v-for="r in requesters" :key="r">{{ r }}</option>
     </select>
     <router-link v-if="store.isEditor" to="/item/new" class="btn primary">＋ 新增料件</router-link>
   </section>
