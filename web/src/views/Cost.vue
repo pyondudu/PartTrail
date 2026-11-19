@@ -6,6 +6,7 @@ const selected = ref('')
 </script>
 
 <script setup>
+import Skeleton from '../components/Skeleton.vue'
 import { computed } from 'vue'
 import { store } from '../lib/store'
 import { STATUS, fmtDate, fmtMoney, untaxedCost } from '../lib/util'
@@ -56,7 +57,7 @@ const quoted = computed(() => summarize(picked.value.filter((i) => i.status === 
       <h2>成本分析</h2>
     </div>
 
-    <p v-if="store.loading" class="muted center">載入中…</p>
+    <Skeleton v-if="store.loading" />
     <p v-else-if="!options.length" class="muted center empty">還沒有料件填公司報價單號。請在料件的「公司報價單號」欄填入給客戶的報價單號。</p>
 
     <template v-else>

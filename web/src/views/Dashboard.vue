@@ -1,4 +1,5 @@
 <script setup>
+import Skeleton from '../components/Skeleton.vue'
 import { computed, ref, watch } from 'vue'
 import { store } from '../lib/store'
 import { STATUS, STATUS_KEYS, urgency, daysText, fmtDate, todayStr, firstLineText } from '../lib/util'
@@ -117,7 +118,7 @@ watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.va
     只顯示「{{ QUICK_LABEL[quick] }}」<button class="btn link" @click="quick = ''">清除</button>
   </p>
 
-  <p v-if="store.loading" class="muted center">載入中…</p>
+  <Skeleton v-if="store.loading" />
   <p v-else-if="!list.length" class="muted center empty">沒有符合條件的料件</p>
 
   <!-- 電腦：表格 -->

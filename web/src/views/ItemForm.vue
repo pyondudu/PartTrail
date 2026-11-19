@@ -4,7 +4,9 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
-import { STATUS, STATUS_KEYS, todayStr, fmtMoney, lineAmount, quoteTotals } from '../lib/util'
+import { STATUS, STATUS_KEYS, todayStr, fmtMoney, lineAmount, quoteTotals, shake } from '../lib/util'
+import { toast } from '../lib/toast'
+import Skeleton from '../components/Skeleton.vue'
 
 const props = defineProps({ id: String })
 const router = useRouter()
@@ -88,7 +90,7 @@ function nameList(table, field, label) {
     const name = window.prompt(`新增${label}名稱：`)?.trim()
     if (!name) return
     const { error } = await supabase.from(table).insert({ name })
-    if (error && error.code !== '23505') return alert(`新增${label}失敗：` + error.message)
+    if (error && error.code !== '23505') return toast(`新增${label}失敗：` + error.message, 'error')
     if (!list.value.includes(name)) list.value.push(name)
     form[field] = name
   })
@@ -195,6 +197,7 @@ async function save() {
     const first = document.querySelector('.form .invalid')
     first?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     first?.querySelector('input, textarea, select')?.focus({ preventScroll: true })
+    document.querySelectorAll('.form .invalid').forEach(shake)
     return
   }
   err.value = ''
@@ -220,13 +223,14 @@ async function save() {
     }
   }
   busy.value = false
+  toast(isNew.value ? '已新增料件' : '已儲存')
   router.replace('/item/' + data.id)
 }
 </script>
 
 <template>
   <div v-if="!store.isEditor" class="card center">唯讀帳號無法編輯。</div>
-  <div v-else-if="!isNew && !original" class="muted center">載入中…</div>
+  <Skeleton v-else-if="!isNew && !original" variant="detail" />
   <form v-else class="form" novalidate @submit.prevent="save">
     <div class="page-head">
       <button type="button" class="btn ghost small" @click="router.back()">← 返回</button>
@@ -378,7 +382,7 @@ async function save() {
     <p v-if="err" class="msg error">{{ err }}</p>
     <div class="form-actions">
       <button type="button" class="btn ghost" @click="router.back()">取消</button>
-      <button class="btn primary" :disabled="busy">{{ busy ? (pending.length ? '儲存並上傳中…' : '儲存中…') : '儲存' }}</button>
+      <button class="btn primary" :class="{ loading: busy }" :disabled="busy">{{ busy ? (pending.length ? '儲存並上傳中' : '儲存中') : '儲存' }}</button>
     </div>
   </form>
 </template>

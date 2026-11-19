@@ -12,3 +12,5 @@ widget/config.json
 supabase/vendors_seed.sql
 supabase/requesters_seed.sql
 .claude/settings.local.json
+# 設計參考圖（第三方著作，只留本機）
+design-ref/

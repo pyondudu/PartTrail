@@ -120,3 +120,12 @@ export function toLoginEmail(input) {
   const v = input.trim().toLowerCase()
   return v.includes('@') ? v : `${v}@${LOGIN_DOMAIN}`
 }
+
+// 讓元素左右晃一下（輸入錯誤提示）；可重複觸發
+export function shake(el) {
+  if (!el) return
+  el.classList.remove('shake')
+  void el.offsetWidth
+  el.classList.add('shake')
+  el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true })
+}

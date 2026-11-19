@@ -6,6 +6,7 @@ import { store, initAuth } from './lib/store'
 import Login from './views/Login.vue'
 import { ICON, SITE_NAME, SITE_TAGLINE } from './lib/util'
 import { update, checkUpdate, applyUpdate, formatBuild, watchUpdates } from './lib/update'
+import { toastState } from './lib/toast'
 
 const router = useRouter()
 const ready = ref(false)
@@ -69,4 +70,9 @@ async function logout() {
       <button v-else class="btn link" @click="checkUpdate()">檢查更新</button>
     </footer>
   </template>
+  <Transition name="toast">
+    <div v-if="toastState.msg" :key="toastState.key" class="toast" :class="toastState.type" role="status" aria-live="polite">
+      <span class="toast-icon" aria-hidden="true">{{ toastState.type === 'error' ? '!' : '✓' }}</span>{{ toastState.msg }}
+    </div>
+  </Transition>
 </template>

@@ -8,6 +8,7 @@ const project = ref('')
 </script>
 
 <script setup>
+import Skeleton from '../components/Skeleton.vue'
 import { computed } from 'vue'
 import { store } from '../lib/store'
 import { fmtDate, fmtMoney } from '../lib/util'
@@ -56,7 +57,7 @@ const rows = computed(() =>
       </select>
     </section>
 
-    <p v-if="store.loading" class="muted center">載入中…</p>
+    <Skeleton v-if="store.loading" />
     <p v-else-if="!rows.length" class="muted center empty">沒有符合條件的報價</p>
 
     <div v-else class="lines-wrap">

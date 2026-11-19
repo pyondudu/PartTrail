@@ -4,12 +4,13 @@ import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { fmtDate, fmtMoney, todayStr } from '../lib/util'
 import { COLUMNS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
+import { toast } from '../lib/toast'
 
 const invoices = ref([])
 const vendorTerms = ref({})
-const toast = ref('')
 const err = ref('')
 const busy = ref(false)
+const busyBtn = ref('') // 哪個按鈕在轉圈：save / pasted
 
 async function loadInvoices() {
   // 已登打發票：日期近的在上面（使用者指定的例外）
@@ -22,11 +23,6 @@ onMounted(async () => {
   const { data } = await supabase.from('vendors').select('name, payment_terms')
   vendorTerms.value = Object.fromEntries((data ?? []).filter((v) => v.payment_terms).map((v) => [v.name, v.payment_terms]))
 })
-
-function flash(msg) {
-  toast.value = msg
-  setTimeout(() => (toast.value = ''), 2500)
-}
 
 // 待登打：已收貨、尚未對應發票；依 廠商＋報價單號 分組，與總表一致依到貨日由舊到新
 const byReceived = (a, b) => (a.received_date || '9999').localeCompare(b.received_date || '9999') || a.created_at.localeCompare(b.created_at)
@@ -161,9 +157,11 @@ async function saveInvoice() {
 
 async function save() {
   busy.value = true
+  busyBtn.value = 'save'
   const inv = await saveInvoice()
   busy.value = false
-  if (inv) { flash('發票已儲存'); edit.value = null }
+  busyBtn.value = ''
+  if (inv) { toast('發票已儲存'); edit.value = null }
 }
 
 // 已貼上：用 exported_at 記錄，避免漏貼或重複貼
@@ -171,26 +169,28 @@ async function setPasted(invs, pasted, { clearChecked = false } = {}) {
   const ids = invs.map((v) => v.id).filter(Boolean)
   if (!ids.length) return false
   const { error } = await supabase.from('invoices').update({ exported_at: pasted ? new Date().toISOString() : null }).in('id', ids)
-  if (error) { alert(error.message); return false }
+  if (error) { toast('標記失敗：' + error.message, 'error'); return false }
   await loadInvoices()
   if (edit.value?.id && ids.includes(edit.value.id)) edit.value.exported_at = pasted ? new Date().toISOString() : null
   if (clearChecked) checked.value = new Set()
-  flash(pasted ? `已標記 ${ids.length} 張為已貼上` : '已取消標記')
+  toast(pasted ? `已標記 ${ids.length} 張為已貼上` : '已取消標記')
   return true
 }
 
 // 新發票：先儲存再標記已貼上，完成後關閉表單
 async function savePasted() {
   busy.value = true
+  busyBtn.value = 'pasted'
   const inv = await saveInvoice()
   const ok = inv && (await setPasted([inv], true))
   busy.value = false
-  if (ok) { flash('發票已儲存並標記已貼上'); edit.value = null }
+  busyBtn.value = ''
+  if (ok) { toast('發票已儲存並標記已貼上'); edit.value = null }
 }
 
 async function copy(invs) {
   await copyRows(invs)
-  flash(`已複製 ${invs.length} 列，到試算表最下方空白列的 A 欄貼上`)
+  toast(`已複製 ${invs.length} 列，到試算表最下方空白列的 A 欄貼上`)
 }
 
 // 已登打清單勾選：一次複製多列（依發票日期排序）或一起標記
@@ -222,7 +222,8 @@ const fmtMonth = (m) => `${m.slice(0, 4)} 年 ${Number(m.slice(5, 7))} 月`
 async function removeInvoice() {
   if (!confirm(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已貼到試算表的那列請自行刪除。`)) return
   const { error } = await supabase.from('invoices').delete().eq('id', edit.value.id)
-  if (error) return alert(error.message)
+  if (error) return toast('刪除失敗：' + error.message, 'error')
+  toast(`已刪除發票 ${edit.value.invoice_no}`)
   edit.value = null
   await loadInvoices()
 }
@@ -288,10 +289,10 @@ async function removeInvoice() {
       <div class="form-actions wrap">
         <button v-if="edit.id" class="btn link danger" :disabled="busy" @click="removeInvoice">刪除發票</button>
         <span class="spacer" />
-        <button v-if="!edit.id" class="btn ghost" :disabled="busy" @click="savePasted">✓ 儲存並標記已貼上</button>
+        <button v-if="!edit.id" class="btn ghost" :class="{ loading: busyBtn === 'pasted' }" :disabled="busy" @click="savePasted">✓ 儲存並標記已貼上</button>
         <button v-else class="btn ghost" :disabled="busy" @click="setPasted([edit], !edit.exported_at)">{{ edit.exported_at ? '取消已貼上' : '✓ 標記已貼上' }}</button>
         <button class="btn ghost" :disabled="busy" @click="copy([edit])">📋 複製這列</button>
-        <button class="btn primary" :disabled="busy" @click="save">{{ busy ? '儲存中…' : '儲存' }}</button>
+        <button class="btn primary" :class="{ loading: busyBtn === 'save' }" :disabled="busy" @click="save">{{ busyBtn === 'save' ? '儲存中' : '儲存' }}</button>
       </div>
     </section>
 
@@ -353,6 +354,5 @@ async function removeInvoice() {
       </ul>
     </section>
 
-    <div v-if="toast" class="toast">{{ toast }}</div>
   </div>
 </template>

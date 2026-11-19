@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
 import QuoteLines from '../components/QuoteLines.vue'
+import Skeleton from '../components/Skeleton.vue'
+import { toast } from '../lib/toast'
 import { STATUS, urgency, daysText, fmtDate, fmtDateTime, fmtMoney, progressText, todayStr } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -25,7 +27,6 @@ const history = ref([])
 const statusLog = ref([])
 const files = ref([])
 const invoice = ref(null)
-const toast = ref('')
 const uploading = ref(false)
 
 // 點照片在原頁面放大預覽；點背景、✕ 或按 Esc 關閉
@@ -60,16 +61,11 @@ async function loadRelated() {
 // item 透過 realtime 更新時（例如別處改了交期），一併重新載入歷史
 watch(() => [props.id, item.value?.updated_at], loadRelated, { immediate: true })
 
-function flash(msg) {
-  toast.value = msg
-  setTimeout(() => (toast.value = ''), 2000)
-}
-
 async function copyProgress() {
   const text = progressText(item.value)
   try {
     await navigator.clipboard.writeText(text)
-    flash('已複製進度文字')
+    toast('已複製進度文字')
   } catch {
     window.prompt('請手動複製：', text)
   }
@@ -78,7 +74,8 @@ async function copyProgress() {
 async function markReceived() {
   if (!confirm('標記為已收貨（到貨日：今天）？')) return
   const { error } = await supabase.from('items').update({ status: 'received', received_date: todayStr() }).eq('id', props.id)
-  if (error) alert(error.message)
+  if (error) toast('標記收貨失敗：' + error.message, 'error')
+  else toast('已標記收貨')
 }
 
 async function upload(e) {
@@ -88,10 +85,10 @@ async function upload(e) {
   uploading.value = true
   try {
     await uploadAttachments(props.id, list)
-    flash('上傳完成')
+    toast('上傳完成')
     await loadRelated()
   } catch (err) {
-    alert('上傳失敗：' + err.message)
+    toast('上傳失敗：' + err.message, 'error')
   } finally {
     uploading.value = false
   }
@@ -109,13 +106,14 @@ async function removeItem() {
   const paths = files.value.map((f) => f.file_path)
   if (paths.length) await supabase.storage.from('attachments').remove(paths)
   const { error } = await supabase.from('items').delete().eq('id', props.id)
-  if (error) return alert(error.message)
+  if (error) return toast('刪除失敗：' + error.message, 'error')
+  toast('已刪除料件')
   router.replace('/')
 }
 </script>
 
 <template>
-  <p v-if="!item && store.loading" class="muted center">載入中…</p>
+  <Skeleton v-if="!item && store.loading" variant="detail" />
   <div v-else-if="!item" class="card center">
     找不到這筆料件（可能已刪除）。<router-link to="/">回收貨總表</router-link>
   </div>
@@ -233,8 +231,6 @@ async function removeItem() {
     <div v-if="store.isEditor" class="danger-zone">
       <button class="btn link danger" @click="removeItem">刪除此料件</button>
     </div>
-
-    <div v-if="toast" class="toast">{{ toast }}</div>
 
     <div v-if="preview" class="lightbox" @click.self="preview = null">
       <button class="lightbox-close" aria-label="關閉" @click="preview = null">✕</button>

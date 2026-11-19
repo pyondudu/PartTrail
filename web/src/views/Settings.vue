@@ -3,19 +3,17 @@ import { computed, onMounted, ref } from 'vue'
 import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { TERMS } from '../lib/payables'
+import { toast } from '../lib/toast'
+import { shake } from '../lib/util'
 
 // 廠商與交易條件：在這裡新增廠商、修改交易條件；登打發票時自動帶入
 const vendors = ref([])
 const err = ref('')
-const toast = ref('')
 const newName = ref('')
 const newTerms = ref('')
 const busy = ref(false)
-
-function flash(msg) {
-  toast.value = msg
-  setTimeout(() => (toast.value = ''), 2000)
-}
+const added = ref(false) // 新增成功後按鈕短暫顯示 ✓
+const nameInput = ref(null)
 
 async function load() {
   const { data, error } = await supabase.from('vendors').select('id, name, payment_terms, need_serials')
@@ -36,39 +34,44 @@ const termOptions = (v) => [...new Set([...TERMS, v].filter(Boolean))]
 async function addVendor() {
   const name = newName.value.trim()
   if (!name) return
-  if (vendors.value.some((v) => v.name === name)) return alert(`「${name}」已經在清單裡`)
+  if (vendors.value.some((v) => v.name === name)) {
+    shake(nameInput.value)
+    return toast(`「${name}」已經在清單裡`, 'error')
+  }
   busy.value = true
   const { error } = await supabase.from('vendors').insert({ name, payment_terms: newTerms.value || null })
   busy.value = false
-  if (error) return alert('新增廠商失敗：' + error.message)
+  if (error) return toast('新增廠商失敗：' + error.message, 'error')
   newName.value = ''
   newTerms.value = ''
   await load()
-  flash(`已新增 ${name}`)
+  toast(`已新增 ${name}`)
+  added.value = true
+  setTimeout(() => (added.value = false), 900)
 }
 
 async function setTerms(v, terms) {
   const prev = v.payment_terms
   v.payment_terms = terms || null
   const { error } = await supabase.from('vendors').update({ payment_terms: v.payment_terms }).eq('id', v.id)
-  if (error) { v.payment_terms = prev; return alert('儲存失敗：' + error.message) }
-  flash(`${v.name}：${terms || '未設定'}`)
+  if (error) { v.payment_terms = prev; return toast('儲存失敗：' + error.message, 'error') }
+  toast(`${v.name}：${terms || '未設定'}`)
 }
 
 async function setNeedSerials(v, on) {
   const prev = v.need_serials
   v.need_serials = on
   const { error } = await supabase.from('vendors').update({ need_serials: on }).eq('id', v.id)
-  if (error) { v.need_serials = prev; return alert('儲存失敗：' + error.message) }
-  flash(`${v.name}：${on ? '收貨時需記錄序號' : '不需記錄序號'}`)
+  if (error) { v.need_serials = prev; return toast('儲存失敗：' + error.message, 'error') }
+  toast(`${v.name}：${on ? '收貨時需記錄序號' : '不需記錄序號'}`)
 }
 
 async function removeVendor(v) {
   if (!confirm(`刪除廠商「${v.name}」？`)) return
   const { error } = await supabase.from('vendors').delete().eq('id', v.id)
-  if (error) return alert('刪除失敗：' + error.message)
+  if (error) return toast('刪除失敗：' + error.message, 'error')
   vendors.value = vendors.value.filter((x) => x.id !== v.id)
-  flash(`已刪除 ${v.name}`)
+  toast(`已刪除 ${v.name}`)
 }
 </script>
 
@@ -84,14 +87,14 @@ async function removeVendor(v) {
       <p class="muted">新增料件時的廠商下拉選單來自這裡；交易條件會在登打發票時自動帶入並計算預計付款日。勾「需序號」的廠商，料件標為已收貨時必須填貨件序號。</p>
 
       <form v-if="store.isEditor" class="vendor-add" @submit.prevent="addVendor">
-        <label>新增廠商<input v-model="newName" placeholder="廠商名稱" /></label>
+        <label>新增廠商<input ref="nameInput" v-model="newName" placeholder="廠商名稱" /></label>
         <label>交易條件
           <select v-model="newTerms">
             <option value="">未設定</option>
             <option v-for="t in TERMS" :key="t" :value="t">{{ t }}</option>
           </select>
         </label>
-        <button class="btn primary" :disabled="busy || !newName.trim()">新增</button>
+        <button class="btn primary" :class="{ loading: busy, done: added }" :disabled="busy || !newName.trim()">新增</button>
       </form>
 
       <p v-if="err" class="msg error">{{ err }}</p>
@@ -107,7 +110,7 @@ async function removeVendor(v) {
             <option v-for="t in termOptions(v.payment_terms)" :key="t" :value="t">{{ t }}</option>
           </select>
           <span v-else :class="{ unset: !v.payment_terms }">{{ v.payment_terms || '未設定' }}</span>
-          <label v-if="store.isEditor" class="check serial-flag" :class="{ on: v.need_serials }" title="收貨時必填序號">
+          <label v-if="store.isEditor" class="switch serial-flag" title="收貨時必填序號">
             <input type="checkbox" :checked="v.need_serials" @change="setNeedSerials(v, $event.target.checked)" />需序號
           </label>
           <span v-else class="small">{{ v.need_serials ? '需序號' : '' }}</span>
@@ -117,20 +120,19 @@ async function removeVendor(v) {
       </ul>
     </section>
 
-    <div v-if="toast" class="toast">{{ toast }}</div>
   </div>
 </template>
 
 <style scoped>
 .vendor-add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end; margin: 12px 0 16px; }
 .vendor-list { list-style: none; margin: 0; padding: 0; }
-.vendor-list li { display: grid; grid-template-columns: 1fr 160px 84px 48px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+.vendor-list li { display: grid; grid-template-columns: 1fr 160px 96px 48px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
 .vendor-name { display: flex; flex-direction: column; min-width: 0; }
 .vendor-list .unset { color: var(--soon); }
 .small { font-size: 0.8rem; }
-.serial-flag { gap: 6px; padding: 4px 6px; font-size: 0.85rem; white-space: nowrap; }
+.serial-flag { gap: 6px; font-size: 0.85rem; white-space: nowrap; }
 @media (max-width: 640px) {
   .vendor-add { grid-template-columns: 1fr; }
-  .vendor-list li { grid-template-columns: 1fr 120px 76px 40px; gap: 6px; }
+  .vendor-list li { grid-template-columns: 1fr 110px 90px 40px; gap: 6px; }
 }
 </style>
