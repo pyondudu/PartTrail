@@ -291,7 +291,7 @@ async function save() {
           <textarea v-model="l.name" rows="1" placeholder="品名規格" aria-label="品名規格" />
           <input v-model.number="l.qty" type="number" min="0" step="any" inputmode="decimal" placeholder="數量" aria-label="數量" />
           <input v-model="l.unit" list="line-units" placeholder="單位" aria-label="單位" />
-          <input v-model.number="l.price" type="number" min="0" step="any" inputmode="decimal" placeholder="單價" aria-label="單價" />
+          <input v-model.number="l.price" type="number" step="any" inputmode="decimal" placeholder="單價" aria-label="單價" />
           <span class="num amount">{{ fmtMoney(lineAmount(l)) }}</span>
           <button type="button" class="btn link danger" aria-label="刪除此列" @click="removeLine(i)">✕</button>
         </div>

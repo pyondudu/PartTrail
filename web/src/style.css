@@ -299,7 +299,7 @@ label.invalid::after { content: "此欄必填"; font-size: 0.75rem; font-weight:
 /* ── 報價明細 ── */
 .qlines { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
 .qline { display: grid; grid-template-columns: minmax(0, 1fr) 80px 72px 100px 90px 32px; gap: 6px; align-items: center; }
-.qline textarea { resize: vertical; min-height: 38px; }
+.qline textarea { resize: vertical; min-height: 38px; field-sizing: content; max-height: 8em; }
 .qline .amount { font-variant-numeric: tabular-nums; }
 .qline-head { font-size: 0.8rem; color: var(--muted); }
 .qline .num { text-align: right; }

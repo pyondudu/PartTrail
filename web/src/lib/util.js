@@ -80,7 +80,8 @@ export function untaxedCost(item) {
 
 export function quoteTotals(lines) {
   const list = lines ?? []
-  const qty = list.reduce((s, l) => s + (Number(l.qty) || 0), 0)
+  // 單價為負的列（運費折扣、折讓）不是實際料件，不算進數量合計
+  const qty = list.reduce((s, l) => s + (Number(l.price) < 0 ? 0 : Number(l.qty) || 0), 0)
   const subtotal = list.reduce((s, l) => s + (lineAmount(l) ?? 0), 0)
   const tax = Math.round(subtotal * TAX_RATE)
   return { qty, subtotal, tax, total: subtotal + tax }
