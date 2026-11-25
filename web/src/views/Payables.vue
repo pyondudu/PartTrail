@@ -234,7 +234,7 @@ async function removeInvoice() {
 <template>
   <div class="detail payables">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
+      <router-link to="/" class="btn ghost small back-home">← 收貨總表</router-link>
       <h2>應付帳款</h2>
     </div>
 

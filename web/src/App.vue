@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { configured, supabase } from './lib/supabase'
 import { store, initAuth } from './lib/store'
 import Login from './views/Login.vue'
@@ -10,6 +10,20 @@ import { toastState } from './lib/toast'
 import Dialog from './components/Dialog.vue'
 
 const router = useRouter()
+const route = useRoute()
+
+// 導覽連結：桌機側欄與窄螢幕頂欄共用同一份。icon 是 24×24 的 SVG path（線條風格）
+const NAV = [
+  { to: '/', label: '收貨總表', icon: 'M3 7h18M3 12h18M3 17h18' },
+  { to: '/quotes', label: '報價查詢', icon: 'M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14zM20 20l-4-4' },
+  { to: '/cost', label: '成本分析', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
+  { to: '/payables', label: '應付帳款', icon: 'M3 6h18v12H3zM3 10h18M7 15h4' },
+  { to: '/settings', label: '設定', icon: 'M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1' },
+]
+// 收貨總表涵蓋品項的新增／明細／編輯頁
+function isActive(to) {
+  return to === '/' ? route.path === '/' || route.path.startsWith('/item/') : route.path.startsWith(to)
+}
 const ready = ref(false)
 
 onMounted(async () => {
@@ -43,24 +57,54 @@ async function logout() {
     </div>
     <Login v-if="!store.session" />
     <template v-else>
-      <header class="topbar">
-        <router-link to="/" class="brand">
-          <img :src="ICON" alt="" width="28" height="28" />
-          <span class="brand-name">{{ SITE_NAME }}</span>
-          <span class="brand-tagline">{{ SITE_TAGLINE }}</span>
-        </router-link>
-        <div class="topbar-right">
-          <router-link to="/quotes" class="btn ghost small">報價查詢</router-link>
-          <router-link to="/cost" class="btn ghost small">成本分析</router-link>
-          <router-link to="/payables" class="btn ghost small">應付帳款</router-link>
-          <router-link to="/settings" class="btn ghost small">設定</router-link>
-          <span class="role-tag" :class="store.role">{{ store.isEditor ? '編輯者' : '唯讀' }}</span>
-          <button class="btn ghost small" @click="logout">登出</button>
+      <div class="shell">
+        <aside class="sidebar">
+          <router-link to="/" class="sidebar-brand">
+            <img :src="ICON" alt="" width="28" height="28" />
+            <span>
+              <span class="brand-name">{{ SITE_NAME }}</span>
+              <span class="brand-tagline">{{ SITE_TAGLINE }}</span>
+            </span>
+          </router-link>
+          <nav class="side-nav">
+            <router-link v-for="n in NAV" :key="n.to" :to="n.to" :class="{ active: isActive(n.to) }">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path :d="n.icon" /></svg>
+              {{ n.label }}
+            </router-link>
+          </nav>
+          <div class="side-foot">
+            <div class="side-user">
+              <span class="role-tag" :class="store.role">{{ store.isEditor ? '編輯者' : '唯讀' }}</span>
+              <button class="btn ghost small" @click="logout">登出</button>
+            </div>
+            <div class="side-version">
+              版本 {{ formatBuild() || '開發版' }}<br />
+              <span v-if="update.status === 'checking'">檢查中…</span>
+              <span v-else-if="update.status === 'latest'">已是最新版</span>
+              <span v-else-if="update.status === 'error'">無法連線，稍後再試</span>
+              <button v-else-if="update.status === 'available'" class="btn link" @click="applyUpdate">有新版本，立即更新</button>
+              <button v-else class="btn link" @click="checkUpdate()">檢查更新</button>
+            </div>
+          </div>
+        </aside>
+        <div class="shell-main">
+          <header class="topbar">
+            <router-link to="/" class="brand">
+              <img :src="ICON" alt="" width="28" height="28" />
+              <span class="brand-name">{{ SITE_NAME }}</span>
+              <span class="brand-tagline">{{ SITE_TAGLINE }}</span>
+            </router-link>
+            <div class="topbar-right">
+              <router-link v-for="n in NAV.slice(1)" :key="n.to" :to="n.to" class="btn ghost small">{{ n.label }}</router-link>
+              <span class="role-tag" :class="store.role">{{ store.isEditor ? '編輯者' : '唯讀' }}</span>
+              <button class="btn ghost small" @click="logout">登出</button>
+            </div>
+          </header>
+          <main class="container">
+            <router-view />
+          </main>
         </div>
-      </header>
-      <main class="container">
-        <router-view />
-      </main>
+      </div>
     </template>
     <footer class="version-bar">
       版本 {{ formatBuild() || '開發版' }} ·

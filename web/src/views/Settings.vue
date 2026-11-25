@@ -79,7 +79,7 @@ async function removeVendor(v) {
 <template>
   <div class="detail">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
+      <router-link to="/" class="btn ghost small back-home">← 收貨總表</router-link>
       <h2>設定</h2>
     </div>
 

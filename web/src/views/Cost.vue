@@ -53,7 +53,7 @@ const quoted = computed(() => summarize(picked.value.filter((i) => i.status === 
 <template>
   <div class="cost">
     <div class="page-head">
-      <router-link to="/" class="btn ghost small">← 收貨總表</router-link>
+      <router-link to="/" class="btn ghost small back-home">← 收貨總表</router-link>
       <h2>成本分析</h2>
     </div>
 
