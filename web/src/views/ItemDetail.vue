@@ -15,7 +15,7 @@ const router = useRouter()
 const route = useRoute()
 // 從報價查詢點進來：返回鈕回報價查詢（保留搜尋與捲動位置）
 // 從報價查詢／成本分析點進來時，返回鈕回到原頁（保留搜尋、篩選與捲動位置）
-const BACK = { quotes: { path: '/quotes', label: '← 報價查詢' }, cost: { path: '/cost', label: '← 成本分析' } }
+const BACK = { quotes: { path: '/quotes', label: '← 報價查詢' }, cost: { path: '/cost', label: '← 成本分析' }, inventory: { path: '/inventory', label: '← 庫存' } }
 const backTo = computed(() => BACK[route.query.from] ?? null)
 function goBack() {
   const { path } = backTo.value
