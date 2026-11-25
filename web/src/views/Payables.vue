@@ -5,6 +5,7 @@ import { store } from '../lib/store'
 import { fmtDate, fmtMoney, todayStr } from '../lib/util'
 import { COLUMNS, buildRow, itemsText, payDueDate, copyRows } from '../lib/payables'
 import { toast } from '../lib/toast'
+import { confirmBox } from '../lib/dialog'
 
 const invoices = ref([])
 const vendorTerms = ref({})
@@ -220,7 +221,7 @@ const shownInvoices = computed(() => invoices.value.filter((v) =>
 const fmtMonth = (m) => `${m.slice(0, 4)} 年 ${Number(m.slice(5, 7))} 月`
 
 async function removeInvoice() {
-  if (!confirm(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已貼到試算表的那列請自行刪除。`)) return
+  if (!(await confirmBox(`刪除發票「${edit.value.invoice_no}」？\n料件會回到待登打；已貼到試算表的那列請自行刪除。`, { ok: '刪除', danger: true }))) return
   const { error } = await supabase.from('invoices').delete().eq('id', edit.value.id)
   if (error) return toast('刪除失敗：' + error.message, 'error')
   toast(`已刪除發票 ${edit.value.invoice_no}`)

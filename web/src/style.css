@@ -104,6 +104,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .brand img { flex-shrink: 0; }
 .brand-tagline { font-weight: 500; color: var(--muted); }
 .topbar-right { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.topbar-right .router-link-active { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: transparent; color: var(--accent); font-weight: 700; }
 .role-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
 .role-tag.editor { background: var(--accent); color: var(--accent-ink); }
 
@@ -168,6 +169,7 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
 .items-table td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: top; }
 .items-table tbody tr { cursor: pointer; }
 .items-table tbody tr:hover { background: var(--surface-2); }
+.items-table tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .items-table tr.u-overdue td:first-child { box-shadow: inset 4px 0 var(--overdue); }
 .items-table tr.u-soon td:first-child { box-shadow: inset 4px 0 var(--soon); }
 .items-table .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -288,6 +290,10 @@ label > input, label > textarea, label > select { color: var(--text); font-size:
   .grid { grid-template-columns: 1fr; }
   .grid .span2 { grid-column: auto; }
   .status-steps { grid-template-columns: 1fr; }
+  /* 導覽壓成一列，放不下就左右滑，不再折成好幾行 */
+  .topbar-right { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+  .topbar-right::-webkit-scrollbar { display: none; }
+  .topbar-right > * { flex-shrink: 0; }
 }
 
 /* ── 必填未填 ── */
@@ -405,7 +411,28 @@ label.invalid::after { content: "此欄必填"; font-size: 0.75rem; font-weight:
   .sk-cards { display: flex; }
 }
 
+/* ── 站內對話框（App.vue 共用一個） ── */
+.dialog-backdrop {
+  position: fixed; inset: 0; z-index: 150; background: rgb(0 0 0 / 0.4);
+  display: grid; place-items: center; padding: 16px;
+}
+.dialog {
+  width: min(400px, 100%); background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25); padding: 20px;
+}
+.dialog-msg { margin: 0 0 16px; white-space: pre-line; word-break: break-word; }
+.dialog-input { margin: -4px 0 16px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.btn.primary.danger { background: var(--overdue); border-color: var(--overdue); color: #fff; }
+.dialog-enter-active, .dialog-leave-active { transition: opacity .18s; }
+.dialog-enter-active .dialog { transition: transform .22s cubic-bezier(.2, .9, .3, 1.2); }
+.dialog-leave-active .dialog { transition: transform .15s ease-in; }
+.dialog-enter-from, .dialog-leave-to { opacity: 0; }
+.dialog-enter-from .dialog, .dialog-leave-to .dialog { transform: scale(.95); }
+
 @media (prefers-reduced-motion: reduce) {
+  .dialog-enter-active, .dialog-leave-active, .dialog-enter-active .dialog, .dialog-leave-active .dialog { transition: none; }
   .shake, .sk, .btn.done::after { animation: none; }
   .btn.loading::after { animation-duration: 2s; }
   .toast-enter-active, .toast-leave-active, .switch input, .switch input::after { transition: none; }

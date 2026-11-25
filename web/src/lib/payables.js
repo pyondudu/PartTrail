@@ -1,6 +1,8 @@
 // 應付帳款：依發票資料產生「應付帳款明細表 for 廠商」的一列，寫入 Google 試算表或複製貼上
 // 欄位：日期｜廠商｜報價單編號｜品項｜金額(含稅價)｜付款方式｜交易條件｜發票日期與編號｜預計付款日｜備註
 
+import { promptBox } from './dialog'
+
 function ymd(s) {
   const [y, m, d] = s.split('-').map(Number)
   return { y, m, d }
@@ -75,6 +77,6 @@ export async function copyRows(invs) {
       await navigator.clipboard.writeText(tsv)
     }
   } catch {
-    window.prompt('請手動複製：', tsv)
+    await promptBox('無法自動複製，請手動複製：', { value: tsv })
   }
 }

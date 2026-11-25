@@ -1,6 +1,7 @@
 <script setup>
 import Skeleton from '../components/Skeleton.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { store } from '../lib/store'
 import { STATUS, STATUS_KEYS, urgency, daysText, fmtDate, todayStr, firstLineText } from '../lib/util'
 
@@ -64,6 +65,19 @@ const list = computed(() => {
     })
 })
 
+// 按 / 直接跳到搜尋框（正在輸入時不攔）
+const router = useRouter()
+const searchEl = ref(null)
+function onKey(e) {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable) return
+  e.preventDefault()
+  searchEl.value?.focus()
+}
+window.addEventListener('keydown', onKey)
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+const open = (i) => router.push('/item/' + i.id)
+
 const QUICK_LABEL = { overdue: '已逾期', soon: '3 日內到貨', month: '本月已收貨' }
 function toggleQuick(k) {
   quick.value = quick.value === k ? '' : k
@@ -90,7 +104,7 @@ watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.va
   </section>
 
   <section class="toolbar dash">
-    <input v-model="q" type="search" placeholder="搜尋品名、廠商、需求人、報價單號、序號…" class="search" />
+    <input ref="searchEl" v-model="q" type="search" placeholder="搜尋品名、廠商、需求人、報價單號、序號…" class="search" />
     <select v-model="status">
       <option value="active">進行中</option>
       <option value="all">全部</option>
@@ -122,7 +136,7 @@ watch(status, (v) => { if (quick.value === 'month' && v !== 'received') quick.va
       </tr>
     </thead>
     <tbody>
-      <tr v-for="i in list" :key="i.id" :class="'u-' + urgency(i)" @click="$router.push('/item/' + i.id)">
+      <tr v-for="i in list" :key="i.id" :class="'u-' + urgency(i)" tabindex="0" @click="open(i)" @keydown.enter="open(i)">
         <td>
           <div class="due">{{ fmtDate(i.due_date) }}</div>
           <div class="days">{{ daysText(i) }}</div>

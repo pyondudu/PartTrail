@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { store } from '../lib/store'
 import { TERMS } from '../lib/payables'
 import { toast } from '../lib/toast'
+import { confirmBox } from '../lib/dialog'
 import { shake } from '../lib/util'
 
 // 廠商與交易條件：在這裡新增廠商、修改交易條件；登打發票時自動帶入
@@ -67,7 +68,7 @@ async function setNeedSerials(v, on) {
 }
 
 async function removeVendor(v) {
-  if (!confirm(`刪除廠商「${v.name}」？`)) return
+  if (!(await confirmBox(`刪除廠商「${v.name}」？`, { ok: '刪除', danger: true }))) return
   const { error } = await supabase.from('vendors').delete().eq('id', v.id)
   if (error) return toast('刪除失敗：' + error.message, 'error')
   vendors.value = vendors.value.filter((x) => x.id !== v.id)

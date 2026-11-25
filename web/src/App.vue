@@ -7,6 +7,7 @@ import Login from './views/Login.vue'
 import { ICON, SITE_NAME, SITE_TAGLINE } from './lib/util'
 import { update, checkUpdate, applyUpdate, formatBuild, watchUpdates } from './lib/update'
 import { toastState } from './lib/toast'
+import Dialog from './components/Dialog.vue'
 
 const router = useRouter()
 const ready = ref(false)
@@ -75,4 +76,5 @@ async function logout() {
       <span class="toast-icon" aria-hidden="true">{{ toastState.type === 'error' ? '!' : '✓' }}</span>{{ toastState.msg }}
     </div>
   </Transition>
+  <Dialog />
 </template>

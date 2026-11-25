@@ -1,11 +1,12 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { store, getItem } from '../lib/store'
 import { uploadAttachments, renameDuplicates } from '../lib/attachments'
 import { STATUS, STATUS_KEYS, todayStr, fmtMoney, lineAmount, quoteTotals, shake } from '../lib/util'
 import { toast } from '../lib/toast'
+import { alertBox, confirmBox, promptBox, dialogState } from '../lib/dialog'
 import Skeleton from '../components/Skeleton.vue'
 
 const props = defineProps({ id: String })
@@ -24,6 +25,9 @@ const form = reactive({ ...EMPTY, quote_lines: [blankLine()] })
 // 新增時通常報價單一到就已下單：預設「已下單」、下單日帶今天，只有報價時再點回「已報價」
 if (isNew.value) setStatus('ordered')
 const original = ref(null)
+// 未儲存離開提示：記下載入完成時的表單內容，之後有改或有待上傳附檔就算有變更
+const snapshot = ref(isNew.value ? JSON.stringify(form) : null)
+const saved = ref(false)
 const reason = ref('')
 const err = ref('')
 const busy = ref(false)
@@ -38,6 +42,8 @@ watchEffect(() => {
     form.quote_lines = item.quote_lines?.length ? JSON.parse(JSON.stringify(item.quote_lines)) : [blankLine()]
     // 舊資料的報價金額與明細總計不同時，視為手動輸入，不自動覆蓋
     amountTouched.value = item.quote_amount !== null && item.quote_amount !== quoteTotals(item.quote_lines).total
+    // 等明細帶入數量／名稱的 watch 跑完再記快照，才不會一打開就算「有變更」
+    nextTick(() => (snapshot.value = JSON.stringify(form)))
   }
 })
 
@@ -72,6 +78,25 @@ watch(autoName, (v, prev) => {
   if (v && (!form.part_name || form.part_name === prev)) form.part_name = v
 })
 
+const dirty = computed(() => !saved.value && snapshot.value !== null && (snapshot.value !== JSON.stringify(form) || pending.value.length > 0 || reason.value.trim() !== ''))
+onBeforeRouteLeave(async () => {
+  if (!dirty.value) return true
+  return confirmBox('有未儲存的變更，確定要離開嗎？', { ok: '離開不儲存', cancel: '繼續編輯', danger: true })
+})
+function onBeforeUnload(e) {
+  if (dirty.value) { e.preventDefault(); e.returnValue = '' }
+}
+// 編輯中按 Ctrl／⌘＋Enter 直接儲存
+function onKeydown(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !busy.value && !dialogState.open && store.isEditor) { e.preventDefault(); save() }
+}
+window.addEventListener('beforeunload', onBeforeUnload)
+window.addEventListener('keydown', onKeydown)
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  window.removeEventListener('keydown', onKeydown)
+})
+
 const dueChanged = computed(() => original.value?.due_date && form.due_date !== original.value.due_date)
 
 // 下拉選單：名單來自 Supabase 表（不寫進公開程式碼）；需求人選「＋ 新增…」可當場加入，廠商到設定頁新增。
@@ -87,7 +112,7 @@ function nameList(table, field, label) {
   watch(() => form[field], async (v, prev) => {
     if (v !== ADD_NEW) return
     form[field] = prev
-    const name = window.prompt(`新增${label}名稱：`)?.trim()
+    const name = (await promptBox(`新增${label}名稱：`))?.trim()
     if (!name) return
     const { error } = await supabase.from(table).insert({ name })
     if (error && error.code !== '23505') return toast(`新增${label}失敗：` + error.message, 'error')
@@ -116,10 +141,10 @@ const projects = computed(() => {
   const active = store.items.filter((i) => i.status !== 'received').map((i) => i.project)
   return [...new Set([...active, ...extraProjects.value, form.project].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
 })
-watch(() => form.project, (v, prev) => {
+watch(() => form.project, async (v, prev) => {
   if (v !== ADD_NEW) return
   form.project = prev
-  const name = window.prompt('新增專案名稱：')?.trim()
+  const name = (await promptBox('新增專案名稱：'))?.trim()
   if (!name) return
   if (!projects.value.includes(name)) extraProjects.value.push(name)
   form.project = name
@@ -129,10 +154,10 @@ watch(() => form.project, (v, prev) => {
 const UNITS = ['pcs', 'set']
 const extraUnits = ref([])
 const units = computed(() => [...new Set([...UNITS, ...extraUnits.value, form.unit].filter(Boolean))])
-watch(() => form.unit, (v, prev) => {
+watch(() => form.unit, async (v, prev) => {
   if (v !== ADD_NEW) return
   form.unit = prev
-  const name = window.prompt('輸入單位：')?.trim()
+  const name = (await promptBox('輸入單位：', { placeholder: '例：箱、卷、m' }))?.trim()
   if (!name) return
   if (!units.value.includes(name)) extraUnits.value.push(name)
   form.unit = name
@@ -219,10 +244,11 @@ async function save() {
     try {
       await uploadAttachments(data.id, pending.value.map((p) => p.file))
     } catch (e) {
-      alert('料件已儲存，但附檔上傳失敗：' + e.message + '\n請到詳細頁重新上傳。')
+      await alertBox('料件已儲存，但附檔上傳失敗：' + e.message + '\n請到詳細頁重新上傳。')
     }
   }
   busy.value = false
+  saved.value = true
   toast(isNew.value ? '已新增料件' : '已儲存')
   router.replace('/item/' + data.id)
 }

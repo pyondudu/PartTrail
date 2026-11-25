@@ -7,6 +7,7 @@ import { uploadAttachments, renameDuplicates } from '../lib/attachments'
 import QuoteLines from '../components/QuoteLines.vue'
 import Skeleton from '../components/Skeleton.vue'
 import { toast } from '../lib/toast'
+import { confirmBox, promptBox } from '../lib/dialog'
 import { STATUS, urgency, daysText, fmtDate, fmtDateTime, fmtMoney, progressText, todayStr } from '../lib/util'
 
 const props = defineProps({ id: String })
@@ -67,12 +68,12 @@ async function copyProgress() {
     await navigator.clipboard.writeText(text)
     toast('已複製進度文字')
   } catch {
-    window.prompt('請手動複製：', text)
+    await promptBox('無法自動複製，請手動複製：', { value: text })
   }
 }
 
 async function markReceived() {
-  if (!confirm('標記為已收貨（到貨日：今天）？')) return
+  if (!(await confirmBox('標記為已收貨（到貨日：今天）？', { ok: '已收貨' }))) return
   const { error } = await supabase.from('items').update({ status: 'received', received_date: todayStr() }).eq('id', props.id)
   if (error) toast('標記收貨失敗：' + error.message, 'error')
   else toast('已標記收貨')
@@ -95,14 +96,17 @@ async function upload(e) {
 }
 
 async function removeFile(f) {
-  if (!confirm(`刪除附檔「${f.file_name}」？`)) return
-  await supabase.storage.from('attachments').remove([f.file_path])
-  await supabase.from('attachments').delete().eq('id', f.id)
+  if (!(await confirmBox(`刪除附檔「${f.file_name}」？`, { ok: '刪除', danger: true }))) return
+  const { error: se } = await supabase.storage.from('attachments').remove([f.file_path])
+  const { error: de } = se ? {} : await supabase.from('attachments').delete().eq('id', f.id)
+  const error = se || de
+  if (error) toast('刪除附檔失敗：' + error.message, 'error')
+  else toast('已刪除附檔')
   await loadRelated()
 }
 
 async function removeItem() {
-  if (!confirm(`確定刪除「${item.value.part_name}」？此動作無法復原。`)) return
+  if (!(await confirmBox(`確定刪除「${item.value.part_name}」？\n此動作無法復原。`, { ok: '刪除', danger: true }))) return
   const paths = files.value.map((f) => f.file_path)
   if (paths.length) await supabase.storage.from('attachments').remove(paths)
   const { error } = await supabase.from('items').delete().eq('id', props.id)
