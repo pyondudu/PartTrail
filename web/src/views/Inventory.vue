@@ -19,10 +19,17 @@ import { promptBox } from '../lib/dialog'
 const units = vref([])
 const loading = vref(true)
 
+// 只追蹤系統設定勾了「需序號」的廠商
+const trackedVendors = vref(new Set())
+
 async function load() {
-  const { data, error } = await supabase.from('serial_units').select('*')
+  const [{ data, error }, { data: vs, error: vErr }] = await Promise.all([
+    supabase.from('serial_units').select('*'),
+    supabase.from('vendors').select('name').eq('need_serials', true),
+  ])
   loading.value = false
-  if (error) return toast('讀取庫存失敗：' + error.message, 'error')
+  if (error || vErr) return toast('讀取庫存失敗：' + (error || vErr).message, 'error')
+  trackedVendors.value = new Set((vs ?? []).map((v) => v.name))
   units.value = data ?? []
 }
 onMounted(load)
@@ -33,7 +40,7 @@ const itemMap = computed(() => new Map(store.items.map((i) => [i.id, i])))
 const all = computed(() =>
   units.value
     .map((u) => ({ ...u, item: itemMap.value.get(u.item_id) }))
-    .filter((u) => u.item)
+    .filter((u) => u.item && trackedVendors.value.has(u.item.vendor))
     .sort((a, b) =>
       (a.item.received_date || '9999').localeCompare(b.item.received_date || '9999')
       || String(a.item.part_name).localeCompare(String(b.item.part_name))
@@ -45,15 +52,37 @@ const counts = computed(() => ({
   issued: all.value.filter((u) => u.status === 'issued').length,
 }))
 
+// 型號：報價明細第一列（去掉「（共 N 項）」），沒有明細時用品名
+function modelOf(item) {
+  return firstLineText(item).replace(/（共 \d+ 項）$/, '') || String(item.part_name ?? '')
+}
+
 const kw = computed(() => q.value.trim().toLowerCase())
-const rows = computed(() =>
+// 廠商篩選＋搜尋（不看狀態），給彙總表與清單共用
+const matched = computed(() =>
   all.value.filter((u) => {
-    if (status.value && u.status !== status.value) return false
     if (vendor.value && u.item.vendor !== vendor.value) return false
     if (!kw.value) return true
     const hay = [u.serial, u.item.part_name, u.item.spec, ...(u.item.quote_lines ?? []).map((l) => l.name), u.item.vendor, u.item.project, u.issued_project, u.note].join(' ').toLowerCase()
     return hay.includes(kw.value)
   }))
+const rows = computed(() => matched.value.filter((u) => !status.value || u.status === status.value))
+
+// 型號數量彙總
+const summary = computed(() => {
+  const m = new Map()
+  for (const u of matched.value) {
+    const model = modelOf(u.item)
+    const key = model + '\u0000' + (u.item.vendor ?? '')
+    let g = m.get(key)
+    if (!g) m.set(key, (g = { key, model, part: u.item.part_name, vendor: u.item.vendor, in_stock: 0, issued: 0 }))
+    g[u.status === 'issued' ? 'issued' : 'in_stock']++
+  }
+  return [...m.values()].sort((a, b) => a.model.localeCompare(b.model, 'zh-Hant', { numeric: true }))
+})
+function pickModel(g) {
+  q.value = q.value.trim() === g.model ? '' : g.model
+}
 
 // ── 勾選（批次領用）──
 const picked = vref(new Set())
@@ -125,7 +154,7 @@ async function saveEdit() {
   <div class="inventory">
     <div class="page-head">
       <router-link to="/" class="btn ghost small back-home">← 收貨總表</router-link>
-      <h2>庫存</h2>
+      <h2>庫存管理</h2>
       <span class="muted small">在庫 {{ counts.in_stock }} · 已領用 {{ counts.issued }}</span>
     </div>
 
@@ -145,8 +174,26 @@ async function saveEdit() {
       </button>
     </section>
 
+    <div v-if="!loading && !store.loading && summary.length" class="lines-wrap sum-wrap">
+      <table class="lines-table sum-table">
+        <thead>
+          <tr><th>型號</th><th>品名</th><th>廠商</th><th class="num">在庫</th><th class="num">已領用</th><th class="num">合計</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="g in summary" :key="g.key" :class="{ on: q.trim() === g.model }" title="點一下只列這個型號的序號" @click="pickModel(g)">
+            <td class="strong">{{ g.model }}</td>
+            <td>{{ g.part }}</td>
+            <td>{{ g.vendor }}</td>
+            <td class="num strong">{{ g.in_stock }}</td>
+            <td class="num muted">{{ g.issued }}</td>
+            <td class="num">{{ g.in_stock + g.issued }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <Skeleton v-if="loading || store.loading" />
-    <p v-else-if="!all.length" class="muted center empty">還沒有序號。到料件表單填寫序號後，會自動出現在這裡。</p>
+    <p v-else-if="!all.length" class="muted center empty">還沒有序號。系統設定勾選「需序號」的廠商，料件填寫序號後會自動出現在這裡。</p>
     <p v-else-if="!rows.length" class="muted center empty">沒有符合條件的序號</p>
 
     <div v-else class="lines-wrap">
@@ -169,7 +216,6 @@ async function saveEdit() {
             <td>
               <router-link :to="{ path: '/item/' + u.item_id, query: { from: 'inventory' } }" class="item-link">{{ u.item.part_name }}</router-link>
               <div v-if="firstLineText(u.item) || u.item.spec" class="sub">{{ firstLineText(u.item) || u.item.spec }}</div>
-              <div v-if="u.item.project" class="sub">{{ u.item.project }}</div>
             </td>
             <td>{{ u.item.vendor }}</td>
             <td class="nowrap">{{ fmtDate(u.item.received_date) }}</td>
@@ -244,4 +290,11 @@ async function saveEdit() {
 .inv-dialog h3 { margin: 0; }
 .serial-list { margin: -6px 0 0; max-height: 80px; overflow-y: auto; }
 .small { font-size: 0.85rem; }
+.sum-wrap { margin-bottom: 16px; }
+.sum-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.sum-table tbody tr { cursor: pointer; }
+.sum-table tbody tr:hover { background: var(--bg); }
+.sum-table tbody tr.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.sum-table .num { text-align: right; width: 72px; font-variant-numeric: tabular-nums; }
+.sum-table .strong { font-weight: 600; }
 </style>

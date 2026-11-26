@@ -15,11 +15,11 @@ const route = useRoute()
 // 導覽連結：桌機側欄與窄螢幕頂欄共用同一份。icon 是 24×24 的 SVG path（線條風格）
 const NAV = [
   { to: '/', label: '收貨總表', icon: 'M3 7h18M3 12h18M3 17h18' },
-  { to: '/inventory', label: '庫存', icon: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8' },
   { to: '/quotes', label: '報價查詢', icon: 'M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14zM20 20l-4-4' },
-  { to: '/cost', label: '成本分析', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
   { to: '/payables', label: '應付帳款', icon: 'M3 6h18v12H3zM3 10h18M7 15h4' },
-  { to: '/settings', label: '設定', icon: 'M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1' },
+  { to: '/cost', label: '成本分析', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
+  { to: '/inventory', label: '庫存管理', icon: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8' },
+  { to: '/settings', label: '系統設定', icon: 'M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1' },
 ]
 // 收貨總表涵蓋品項的新增／明細／編輯頁
 function isActive(to) {
